@@ -42,6 +42,7 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+volatile extern uint32_t systime;
 
 LTDC_HandleTypeDef hltdc;
 
@@ -131,11 +132,15 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  uint32_t oldtime = systime;
   while (1)
   {
-
-      HAL_Delay(500);
-      HAL_GPIO_TogglePin(LED3_GPIO_Port, LED3_Pin);
+      uint32_t newsystime = systime;
+      if (systime - oldtime > 250)
+      {
+          oldtime = newsystime;
+          HAL_GPIO_TogglePin(LED3_GPIO_Port, LED3_Pin);
+      }
     /* USER CODE END WHILE */
     MX_USB_HOST_Process();
 
