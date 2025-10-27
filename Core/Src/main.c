@@ -42,7 +42,6 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-volatile extern uint32_t systime;
 
 LTDC_HandleTypeDef hltdc;
 
@@ -58,6 +57,7 @@ TIM_HandleTypeDef htim4;
 SDRAM_HandleTypeDef hsdram1;
 
 /* USER CODE BEGIN PV */
+volatile extern uint32_t systime;
 
 /* USER CODE END PV */
 
@@ -235,14 +235,14 @@ static void MX_LTDC_Init(void)
   hltdc.Init.VSPolarity = LTDC_VSPOLARITY_AL;
   hltdc.Init.DEPolarity = LTDC_DEPOLARITY_AL;
   hltdc.Init.PCPolarity = LTDC_PCPOLARITY_IPC;
-  hltdc.Init.HorizontalSync = 7;
-  hltdc.Init.VerticalSync = 3;
-  hltdc.Init.AccumulatedHBP = 14;
-  hltdc.Init.AccumulatedVBP = 5;
-  hltdc.Init.AccumulatedActiveW = 814;
-  hltdc.Init.AccumulatedActiveH = 485;
-  hltdc.Init.TotalWidth = 820;
-  hltdc.Init.TotalHeigh = 487;
+  hltdc.Init.HorizontalSync = 74;
+  hltdc.Init.VerticalSync = 10;
+  hltdc.Init.AccumulatedHBP = 174;
+  hltdc.Init.AccumulatedVBP = 17;
+  hltdc.Init.AccumulatedActiveW = 974;
+  hltdc.Init.AccumulatedActiveH = 497;
+  hltdc.Init.TotalWidth = 1000;
+  hltdc.Init.TotalHeigh = 500;
   hltdc.Init.Backcolor.Blue = 0;
   hltdc.Init.Backcolor.Green = 0;
   hltdc.Init.Backcolor.Red = 0;
