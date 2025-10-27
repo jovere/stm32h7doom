@@ -76,6 +76,7 @@ static void MX_TIM4_Init(void);
 void MX_USB_HOST_Process(void);
 
 /* USER CODE BEGIN PFP */
+void ITM_Init(void);
 
 /* USER CODE END PFP */
 
@@ -127,6 +128,7 @@ int main(void)
   MX_FATFS_Init();
   MX_USB_HOST_Init();
   /* USER CODE BEGIN 2 */
+    ITM_Init();
 
   /* USER CODE END 2 */
 
@@ -136,8 +138,10 @@ int main(void)
   while (1)
   {
       uint32_t newsystime = systime;
-      if (systime - oldtime > 250)
+      if (systime - oldtime >= 250)
       {
+       //   ITM->PORT[0].u8 = 'A';
+          printf("This is a test: %u\n", systime);
           oldtime = newsystime;
           HAL_GPIO_TogglePin(LED3_GPIO_Port, LED3_Pin);
       }
@@ -776,6 +780,31 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void ITM_Init(void) {
+
+    GPIO_InitTypeDef GPIO_InitStruct;
+    GPIO_InitStruct.Pin = GPIO_PIN_3;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF0_TRACE;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+    // Enable trace in Core Debug
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+
+    // Unlock ITM
+    ITM->LAR = 0xC5ACCE55;
+
+    // Enable ITM
+    ITM->TCR = (1 << ITM_TCR_ITMENA_Pos) |  // Enable ITM
+               (1 << ITM_TCR_SYNCENA_Pos); // Enable sync packets
+
+    // Enable stimulus port 0
+    ITM->TER = 0x1;
+
+}
+
 
 /* USER CODE END 4 */
 
