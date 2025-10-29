@@ -60,6 +60,7 @@ RAM (xrw)      : ORIGIN = 0x24000000, LENGTH = 512K
 RAM_D2 (xrw)      : ORIGIN = 0x30000000, LENGTH = 288K
 RAM_D3 (xrw)      : ORIGIN = 0x38000000, LENGTH = 64K
 ITCMRAM (xrw)      : ORIGIN = 0x00000000, LENGTH = 64K
+SDRAM (xrw)      : ORIGIN = 0xD0000000, LENGTH = 64M
 FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 128K
 }
 
@@ -240,7 +241,14 @@ SECTIONS
     . = ALIGN(8);
   } >DTCMRAM
 
-
+  /* SDRAM section for framebuffers and other large data structures */
+  .sdram_data (NOLOAD) :
+  {
+    . = ALIGN(4);
+    *(.sdram_data)
+    *(.sdram_data*)
+    . = ALIGN(4);
+  } >SDRAM
 
   /* Remove information from the standard libraries */
   /DISCARD/ :
