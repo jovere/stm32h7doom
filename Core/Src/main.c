@@ -77,11 +77,160 @@ void MX_USB_HOST_Process(void);
 
 /* USER CODE BEGIN PFP */
 void ITM_Init(void);
+HAL_StatusTypeDef SDRAM_Test(void);
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+#define SDRAM_TEST_BASE     ((uint32_t)0xD0000000)
+#define SDRAM_TEST_SIZE     (1024 * 1024 * 64)  // 64 MB test
+#define SDRAM_TEST_PATTERN1 0xAAAAAAAA
+#define SDRAM_TEST_PATTERN2 0x55555555
+
+/**
+  * @brief SDRAM Memory Test
+  * Tests basic read/write functionality with different patterns
+  * @retval HAL_OK if all tests pass, HAL_ERROR if any test fails
+  */
+HAL_StatusTypeDef SDRAM_Test(void)
+{
+    uint32_t *pAddr;
+    uint32_t data;
+    uint32_t addr;
+    uint32_t errors = 0;
+    uint32_t test_size = SDRAM_TEST_SIZE;
+
+    printf("\n========== SDRAM Test Start ==========\n");
+    printf("Test Base Address: 0x%08X\n", SDRAM_TEST_BASE);
+    printf("Test Size: %u bytes (%u KB)\n", test_size, test_size / 1024);
+
+    // Test 1: Fill with pattern 0xAAAAAAAA
+    printf("\n[Test 1] Writing pattern 0x%08X...", SDRAM_TEST_PATTERN1);
+    pAddr = (uint32_t *)SDRAM_TEST_BASE;
+    for (addr = 0; addr < test_size; addr += 4)
+    {
+        *pAddr++ = SDRAM_TEST_PATTERN1;
+    }
+    printf(" Done\n");
+
+    // Test 2: Verify pattern 0xAAAAAAAA
+    printf("[Test 2] Verifying pattern 0x%08X...", SDRAM_TEST_PATTERN1);
+    pAddr = (uint32_t *)SDRAM_TEST_BASE;
+    errors = 0;
+    for (addr = 0; addr < test_size; addr += 4)
+    {
+        data = *pAddr++;
+        if (data != SDRAM_TEST_PATTERN1)
+        {
+            errors++;
+            if (errors <= 5)  // Show first 5 errors
+            {
+                printf("\nError at 0x%08X: expected 0x%08X, got 0x%08X",
+                       SDRAM_TEST_BASE + addr, SDRAM_TEST_PATTERN1, data);
+            }
+        }
+    }
+    if (errors == 0)
+        printf(" Pass\n");
+    else
+        printf("\nFailed: %u errors\n", errors);
+
+    if (errors > 0)
+        return HAL_ERROR;
+
+    // Test 3: Fill with pattern 0x55555555
+    printf("[Test 3] Writing pattern 0x%08X...", SDRAM_TEST_PATTERN2);
+    pAddr = (uint32_t *)SDRAM_TEST_BASE;
+    for (addr = 0; addr < test_size; addr += 4)
+    {
+        *pAddr++ = SDRAM_TEST_PATTERN2;
+    }
+    printf(" Done\n");
+
+    // Test 4: Verify pattern 0x55555555
+    printf("[Test 4] Verifying pattern 0x%08X...", SDRAM_TEST_PATTERN2);
+    pAddr = (uint32_t *)SDRAM_TEST_BASE;
+    errors = 0;
+    for (addr = 0; addr < test_size; addr += 4)
+    {
+        data = *pAddr++;
+        if (data != SDRAM_TEST_PATTERN2)
+        {
+            errors++;
+            if (errors <= 5)
+            {
+                printf("\nError at 0x%08X: expected 0x%08X, got 0x%08X",
+                       SDRAM_TEST_BASE + addr, SDRAM_TEST_PATTERN2, data);
+            }
+        }
+    }
+    if (errors == 0)
+        printf(" Pass\n");
+    else
+        printf("\nFailed: %u errors\n", errors);
+
+    if (errors > 0)
+        return HAL_ERROR;
+
+    // Test 5: Walking ones (address line test)
+    printf("[Test 5] Walking ones pattern test...");
+    pAddr = (uint32_t *)SDRAM_TEST_BASE;
+    errors = 0;
+    for (addr = 0; addr < test_size; addr += 4)
+    {
+        uint32_t pattern = 1 << (addr >> 2) % 32;  // Rotate through bits
+        *pAddr++ = pattern;
+    }
+
+    pAddr = (uint32_t *)SDRAM_TEST_BASE;
+    for (addr = 0; addr < test_size; addr += 4)
+    {
+        uint32_t pattern = 1 << (addr >> 2) % 32;
+        data = *pAddr++;
+        if (data != pattern)
+            errors++;
+    }
+
+    if (errors == 0)
+        printf(" Pass\n");
+    else
+        printf(" Failed: %u errors\n", errors);
+
+    if (errors > 0)
+        return HAL_ERROR;
+
+    // Test 6: Sequential incrementing test
+    printf("[Test 6] Sequential write/read test...");
+    pAddr = (uint32_t *)SDRAM_TEST_BASE;
+    for (addr = 0; addr < test_size; addr += 4)
+    {
+        *pAddr++ = addr;
+    }
+
+    pAddr = (uint32_t *)SDRAM_TEST_BASE;
+    errors = 0;
+    for (addr = 0; addr < test_size; addr += 4)
+    {
+        data = *pAddr++;
+        if (data != addr)
+            errors++;
+    }
+
+    if (errors == 0)
+        printf(" Pass\n");
+    else
+        printf(" Failed: %u errors\n", errors);
+
+    if (errors > 0)
+        return HAL_ERROR;
+
+    printf("\n========== SDRAM Test Complete ==========\n");
+    printf("Result: ALL TESTS PASSED\n\n");
+
+    return HAL_OK;
+}
 
 /* USER CODE END 0 */
 
@@ -129,6 +278,16 @@ int main(void)
   MX_USB_HOST_Init();
   /* USER CODE BEGIN 2 */
     ITM_Init();
+
+    // Run SDRAM test
+    if (SDRAM_Test() == HAL_OK)
+    {
+        printf("SDRAM is stable and working correctly!\n");
+    }
+    else
+    {
+        printf("SDRAM test failed! Check timing parameters.\n");
+    }
 
   /* USER CODE END 2 */
 
@@ -635,9 +794,9 @@ static void MX_FMC_Init(void)
   SdramTiming.LoadToActiveDelay = 2;
   SdramTiming.ExitSelfRefreshDelay = 7;
   SdramTiming.SelfRefreshTime = 5;
-  SdramTiming.RowCycleDelay = 6;
+  SdramTiming.RowCycleDelay = 7;
   SdramTiming.WriteRecoveryTime = 2;
-  SdramTiming.RPDelay = 2;
+  SdramTiming.RPDelay = 3;
   SdramTiming.RCDDelay = 3;
 
   if (HAL_SDRAM_Init(&hsdram1, &SdramTiming) != HAL_OK)
@@ -646,6 +805,53 @@ static void MX_FMC_Init(void)
   }
 
   /* USER CODE BEGIN FMC_Init 2 */
+
+  // SDRAM Initialization Sequence Commands
+  FMC_SDRAM_CommandTypeDef Command;
+
+  // 1. Clock Configuration Enable (1 command)
+  Command.CommandMode = FMC_SDRAM_CMD_CLK_ENABLE;
+  Command.CommandTarget = FMC_SDRAM_CMD_TARGET_BANK2;
+  Command.AutoRefreshNumber = 1;
+  Command.ModeRegisterDefinition = 0;
+  if (HAL_SDRAM_SendCommand(&hsdram1, &Command, 0xFFFF) != HAL_OK)
+    Error_Handler();
+
+  // 2. Delay for clock stabilization (typically 100 us)
+  HAL_Delay(1);
+
+  // 3. Precharge all (1 command)
+  Command.CommandMode = FMC_SDRAM_CMD_PALL;
+  Command.CommandTarget = FMC_SDRAM_CMD_TARGET_BANK2;
+  Command.AutoRefreshNumber = 1;
+  Command.ModeRegisterDefinition = 0;
+  if (HAL_SDRAM_SendCommand(&hsdram1, &Command, 0xFFFF) != HAL_OK)
+    Error_Handler();
+
+  // 4. Auto Refresh (8 commands)
+  Command.CommandMode = FMC_SDRAM_CMD_AUTOREFRESH_MODE;
+  Command.CommandTarget = FMC_SDRAM_CMD_TARGET_BANK2;
+  Command.AutoRefreshNumber = 8;
+  Command.ModeRegisterDefinition = 0;
+  if (HAL_SDRAM_SendCommand(&hsdram1, &Command, 0xFFFF) != HAL_OK)
+    Error_Handler();
+
+  // 5. Load Mode Register (1 command)
+  // Mode Register value for CAS Latency 2, Burst Length 1 (AS4C16M16SA):
+  // 0x20 (CAS=2) | 0x00 (BL=1) = 0x20
+  Command.CommandMode = FMC_SDRAM_CMD_LOAD_MODE;
+  Command.CommandTarget = FMC_SDRAM_CMD_TARGET_BANK2;
+  Command.AutoRefreshNumber = 1;
+  Command.ModeRegisterDefinition = 0x20;  // CAS Latency 2, Burst Length 1
+  if (HAL_SDRAM_SendCommand(&hsdram1, &Command, 0xFFFF) != HAL_OK)
+    Error_Handler();
+
+  // 6. Set refresh rate (typically 64ms for normal operation)
+  // For 100MHz: 6400 cycles = 64ms
+  HAL_SDRAM_ProgramRefreshRate(&hsdram1, 6400);
+
+  // Delay to let SDRAM stabilize
+  HAL_Delay(10);
 
   /* USER CODE END FMC_Init 2 */
 }
@@ -830,6 +1036,18 @@ void MPU_Config(void)
   MPU_InitStruct.IsShareable = MPU_ACCESS_SHAREABLE;
   MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
   MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
+
+  HAL_MPU_ConfigRegion(&MPU_InitStruct);
+
+  /** Initializes and configures the Region and the memory to be protected
+  */
+  MPU_InitStruct.Number = MPU_REGION_NUMBER1;
+  MPU_InitStruct.BaseAddress = 0xD0000000;
+  MPU_InitStruct.Size = MPU_REGION_SIZE_64MB;
+  MPU_InitStruct.SubRegionDisable = 0x0;
+  MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
+  MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;
+  MPU_InitStruct.IsBufferable = MPU_ACCESS_BUFFERABLE;
 
   HAL_MPU_ConfigRegion(&MPU_InitStruct);
   /* Enables the MPU */
