@@ -66,6 +66,7 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
+[[noreturn]] void fatal_error(const char* message);
 
 /* USER CODE END EFP */
 
