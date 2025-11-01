@@ -101,8 +101,8 @@ HAL_StatusTypeDef SDRAM_Test(void)
     uint32_t test_size = SDRAM_TEST_SIZE;
 
     printf("\n========== SDRAM Test Start ==========\n");
-    printf("Test Base Address: 0x%08X\n", SDRAM_TEST_BASE);
-    printf("Test Size: %u bytes (%u KB)\n", test_size, test_size / 1024);
+    printf("Test Base Address: 0x%08lX\n", SDRAM_TEST_BASE);
+    printf("Test Size: %lu bytes (%lu KB)\n", test_size, test_size / 1024);
 
     // Test 1: Fill with pattern 0xAAAAAAAA
     printf("\n[Test 1] Writing pattern 0x%08X...", SDRAM_TEST_PATTERN1);
@@ -125,7 +125,7 @@ HAL_StatusTypeDef SDRAM_Test(void)
             errors++;
             if (errors <= 5)  // Show first 5 errors
             {
-                printf("\nError at 0x%08X: expected 0x%08X, got 0x%08X",
+                printf("\nError at 0x%08lX: expected 0x%08X, got 0x%08lX",
                        SDRAM_TEST_BASE + addr, SDRAM_TEST_PATTERN1, data);
             }
         }
@@ -133,7 +133,7 @@ HAL_StatusTypeDef SDRAM_Test(void)
     if (errors == 0)
         printf(" Pass\n");
     else
-        printf("\nFailed: %u errors\n", errors);
+        printf("\nFailed: %lu errors\n", errors);
 
     if (errors > 0)
         return HAL_ERROR;
@@ -159,7 +159,7 @@ HAL_StatusTypeDef SDRAM_Test(void)
             errors++;
             if (errors <= 5)
             {
-                printf("\nError at 0x%08X: expected 0x%08X, got 0x%08X",
+                printf("\nError at 0x%08lX: expected 0x%08X, got 0x%08lX",
                        SDRAM_TEST_BASE + addr, SDRAM_TEST_PATTERN2, data);
             }
         }
@@ -167,7 +167,7 @@ HAL_StatusTypeDef SDRAM_Test(void)
     if (errors == 0)
         printf(" Pass\n");
     else
-        printf("\nFailed: %u errors\n", errors);
+        printf("\nFailed: %lu errors\n", errors);
 
     if (errors > 0)
         return HAL_ERROR;
@@ -194,7 +194,7 @@ HAL_StatusTypeDef SDRAM_Test(void)
     if (errors == 0)
         printf(" Pass\n");
     else
-        printf(" Failed: %u errors\n", errors);
+        printf(" Failed: %lu errors\n", errors);
 
     if (errors > 0)
         return HAL_ERROR;
@@ -219,7 +219,7 @@ HAL_StatusTypeDef SDRAM_Test(void)
     if (errors == 0)
         printf(" Pass\n");
     else
-        printf(" Failed: %u errors\n", errors);
+        printf(" Failed: %lu errors\n", errors);
 
     if (errors > 0)
         return HAL_ERROR;
@@ -297,7 +297,7 @@ int main(void)
       if (systime - oldtime >= 250)
       {
        //   ITM->PORT[0].u8 = 'A';
-          printf("This is a test: %u\n", systime);
+          printf("This is a test: %lu\n", systime);
           oldtime = newsystime;
           HAL_GPIO_TogglePin(LED3_GPIO_Port, LED3_Pin);
       }
