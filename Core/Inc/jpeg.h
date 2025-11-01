@@ -1,63 +1,35 @@
 /*
- * lcd.h
+ * jpeg.h
  *
- *  Created on: 07.06.2014
+ *  Created on: 19.05.2014
  *      Author: Florian
- *  Modified by: Jeremy Overesch (10/29/2025) for STM32H750
  */
 
 
-#ifndef LCD_H_
-#define LCD_H_
+#ifndef JPEG_H_
+#define JPEG_H_
 
 /*---------------------------------------------------------------------*
  *  additional includes                                                *
  *---------------------------------------------------------------------*/
-#include <stdbool.h>
+
 /*---------------------------------------------------------------------*
  *  global definitions                                                 *
  *---------------------------------------------------------------------*/
-
-/* rotate display by 180 degrees */
-//#define	LCD_UPSIDE_DOWN
-
-#define LCD_MAX_X					800	// LCD width (NHD-7.0-800480EF-ASXV)
-#define LCD_MAX_Y					480 // LCD height (NHD-7.0-800480EF-ASXV)
 
 /*---------------------------------------------------------------------*
  *  type declarations                                                  *
  *---------------------------------------------------------------------*/
 
-typedef enum
-{
-	LCD_BACKGROUND,
-	LCD_FOREGROUND
-} lcd_layers_t;
-
 /*---------------------------------------------------------------------*
  *  function prototypes                                                *
  *---------------------------------------------------------------------*/
 
-void lcd_init (LTDC_HandleTypeDef* hltdc);
-
-void lcd_set_layer (lcd_layers_t layer);
-
-void lcd_refresh (void);
-
-void lcd_set_transparency (lcd_layers_t layer, uint8_t transparency);
-
-void LCD_Write (LTDC_HandleTypeDef* hltdc);
+bool jpeg_decode (uint8_t* jpg, uint8_t* decoded, uint16_t xpos, uint16_t ypos);
 
 /*---------------------------------------------------------------------*
  *  global data                                                        *
  *---------------------------------------------------------------------*/
-extern LTDC_HandleTypeDef hltdc;
-
-extern uint32_t lcd_frame_buffer;
-
-extern lcd_layers_t lcd_layer;
-
-extern bool lcd_vsync;
 
 /*---------------------------------------------------------------------*
  *  inline functions and function-like macros                          *
@@ -67,4 +39,4 @@ extern bool lcd_vsync;
  *  eof                                                                *
  *---------------------------------------------------------------------*/
 
-#endif /* LCD_H_ */
+#endif /* JPEG_H_ */
