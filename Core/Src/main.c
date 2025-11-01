@@ -228,6 +228,18 @@ HAL_StatusTypeDef SDRAM_Test(void)
     return HAL_OK;
 }
 
+/*
+ * Show fatal error message and stop in endless loop
+ */
+void fatal_error (const char* message)
+{
+    printf ("FATAL ERROR: %s\n", message);
+
+    while (1)
+    {
+    }
+}
+
 /* USER CODE END 0 */
 
 /**
