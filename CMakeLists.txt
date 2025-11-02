@@ -48,6 +48,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/lcd.c
     Core/Src/gfx.c
     Core/Src/jpeg.c
+    Core/Src/images.c
 )
 
 # Add include paths
