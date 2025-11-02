@@ -26,9 +26,9 @@
 
 #define GFX_RGB565(r, g, b)			((((r & 0xF8) >> 3) << 11) | (((g & 0xFC) >> 2) << 5) | ((b & 0xF8) >> 3))
 
-#define GFX_RGB565_R(color)			((0xF800 & color) >> 11)
-#define GFX_RGB565_G(color)			((0x07E0 & color) >> 5)
-#define GFX_RGB565_B(color)			(0x001F & color)
+#define GFX_RGB565_R(color)			(((0xF800 & color) >> 11) << 3)
+#define GFX_RGB565_G(color)			(((0x07E0 & color) >> 5) << 2)
+#define GFX_RGB565_B(color)			((0x001F & color) << 3)
 
 #define GFX_ARGB8888(r, g, b, a)	(((a & 0xFF) << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF))
 

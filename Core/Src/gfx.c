@@ -310,14 +310,8 @@ static inline void gfx_blend_pixel (gfx_image_t* img, uint16_t x, uint16_t y, ui
  */
 static void gfx_draw_img_rgb565 (gfx_image_t* img, gfx_coord_t* coord)
 {
-	uint32_t dest_address;
-	uint32_t source_address;
-	uint32_t offset;
-	uint16_t picture_width;
-	uint16_t picture_height;
-
-	picture_width = img->width;
-	picture_height = img->height;
+    uint16_t picture_width = img->width;
+	uint16_t picture_height = img->height;
 
 	// check for dimensions
 	if (coord->source_w == 0) return;
@@ -328,11 +322,11 @@ static void gfx_draw_img_rgb565 (gfx_image_t* img, gfx_coord_t* coord)
 	if (coord->dest_y + coord->source_h > GFX_MAX_HEIGHT) return;
 
 	// target address in display RAM
-	dest_address = lcd_frame_buffer + 2 * (GFX_MAX_WIDTH * coord->dest_y + coord->dest_x);
+	uint32_t dest_address = lcd_frame_buffer + 2 * (GFX_MAX_WIDTH * coord->dest_y + coord->dest_x);
 
 	// source address in image
-	offset = 2 * (picture_width * coord->source_y + coord->source_x);
-	source_address = (uint32_t)&img->pixel_data[offset];
+	uint32_t offset = 2 * (picture_width * coord->source_y + coord->source_x);
+	uint32_t source_address = (uint32_t)&img->pixel_data[offset];
 
 	// Configure DMA2D handle
 	hdma2d.Instance = DMA2D;
@@ -346,6 +340,21 @@ static void gfx_draw_img_rgb565 (gfx_image_t* img, gfx_coord_t* coord)
 		fatal_error("DMA2D init failed");
 	}
 
+    hdma2d.LayerCfg[0].AlphaInverted = DMA2D_REGULAR_ALPHA;
+    hdma2d.LayerCfg[0].InputOffset = 0;
+    hdma2d.LayerCfg[0].AlphaMode = DMA2D_NO_MODIF_ALPHA;
+    hdma2d.LayerCfg[0].InputColorMode = DMA2D_INPUT_RGB565;
+    hdma2d.LayerCfg[0].RedBlueSwap = DMA2D_RB_REGULAR;
+    hdma2d.LayerCfg[1].AlphaInverted = DMA2D_REGULAR_ALPHA;
+    hdma2d.LayerCfg[1].InputOffset = 0;
+    hdma2d.LayerCfg[1].AlphaMode = DMA2D_NO_MODIF_ALPHA;
+    hdma2d.LayerCfg[1].InputColorMode = DMA2D_INPUT_RGB565;
+    hdma2d.LayerCfg[1].RedBlueSwap = DMA2D_RB_REGULAR;
+
+    HAL_DMA2D_ConfigLayer(&hdma2d, 0);
+    HAL_DMA2D_ConfigLayer(&hdma2d, 1);
+
+    SCB_CleanDCache_by_Addr((uint32_t*)source_address, coord->source_w * coord->source_h * 2);
 	// Start DMA2D transfer in Memory-to-Memory mode
 	if (HAL_DMA2D_Start(&hdma2d, source_address, dest_address, coord->source_w, coord->source_h) != HAL_OK) {
 		fatal_error("DMA2D start failed");
@@ -426,6 +435,7 @@ static void gfx_draw_img_argb8888 (gfx_image_t* img, gfx_coord_t* coord)
 	}
 
 	// Start blending transfer
+    SCB_CleanDCache_by_Addr((uint32_t*)source_address, coord->source_w * coord->source_h * 4);
 	if (HAL_DMA2D_BlendingStart(&hdma2d, source_address, dest_address, dest_address, coord->source_w, coord->source_h) != HAL_OK) {
 		fatal_error("DMA2D blending start failed");
 	}

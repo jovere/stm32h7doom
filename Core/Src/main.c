@@ -23,6 +23,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "gfx.h"
+#include "images.h"
+#include "jpeg.h"
 #include "lcd.h"
 /* USER CODE END Includes */
 
@@ -240,6 +243,42 @@ void fatal_error (const char* message)
     }
 }
 
+static void show_image (const uint8_t* img)
+{
+    gfx_image_t title;
+    gfx_obj_t obj_title;
+
+    title.width = 240;
+    title.height = 320;
+    title.pixel_format = GFX_PIXEL_FORMAT_RGB565;
+    title.pixel_data = malloc (title.width * title.height * 2);
+    if (title.pixel_data == NULL)
+    {
+        fatal_error("Cannot allocate memory.");
+    }
+
+    obj_title.obj_type = GFX_OBJ_IMG;
+    obj_title.coords.dest_x = 0;
+    obj_title.coords.dest_y = 0;
+    obj_title.coords.source_x = 0;
+    obj_title.coords.source_y = 0;
+    obj_title.coords.source_w = title.width;
+    obj_title.coords.source_h = title.height;
+    obj_title.data = &title;
+
+    jpeg_decode ((uint8_t*)img, title.pixel_data, 0, 0);
+
+    gfx_objects[0] = &obj_title;
+
+    gfx_draw_objects ();
+
+    LL_mDelay(500);
+
+    gfx_delete_objects ();
+
+    free (title.pixel_data);
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -308,6 +347,9 @@ int main(void)
         printf("SDRAM test failed! Check timing parameters.\n");
     }
 
+    gfx_init();
+    show_image(img_loading);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -323,7 +365,7 @@ int main(void)
           oldtime = newsystime;
           HAL_GPIO_TogglePin(LED3_GPIO_Port, LED3_Pin);
       }
-      LCD_Write(&hltdc);
+//      LCD_Write(&hltdc);
     /* USER CODE END WHILE */
     MX_USB_HOST_Process();
 
