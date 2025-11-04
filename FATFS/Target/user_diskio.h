@@ -1,8 +1,9 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file    usbh_diskio.h (based on usbh_diskio_template.h v2.0.2)
-  * @brief   Header for usbh_diskio.c module
+ ******************************************************************************
+  * @file    user_diskio.h
+  * @brief   This file contains the common defines and functions prototypes for
+  *          the user_diskio driver.
   ******************************************************************************
   * @attention
   *
@@ -15,26 +16,28 @@
   *
   ******************************************************************************
   */
-/* USER CODE END Header */
-/* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __USBH_DISKIO_H
-#define __USBH_DISKIO_H
+ /* USER CODE END Header */
 
-/* USER CODE BEGIN firstSection */
-/* can be used to modify / undefine following code or add new definitions */
-/* USER CODE END firstSection */
+/* Define to prevent recursive inclusion -------------------------------------*/
+#ifndef __USER_DISKIO_H
+#define __USER_DISKIO_H
+
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
+/* USER CODE BEGIN 0 */
 
 /* Includes ------------------------------------------------------------------*/
-#include "usbh_core.h"
-#include "usbh_msc.h"
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
-extern const Diskio_drvTypeDef  USBH_Driver;
+extern Diskio_drvTypeDef  USER_Driver;
 
-/* USER CODE BEGIN lastSection */
-/* can be used to modify / undefine previous code or add new definitions */
-/* USER CODE END lastSection */
+/* USER CODE END 0 */
 
-#endif /* __USBH_DISKIO_H */
+#ifdef __cplusplus
+}
+#endif
 
+#endif /* __USER_DISKIO_H */

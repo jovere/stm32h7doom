@@ -18,10 +18,10 @@
 /* USER CODE END Header */
 #include "fatfs.h"
 
-uint8_t retUSBH;    /* Return value for USBH */
-char USBHPath[4];   /* USBH logical drive path */
-FATFS USBHFatFS;    /* File system object for USBH logical drive */
-FIL USBHFile;       /* File object for USBH */
+uint8_t retUSER;    /* Return value for USER */
+char USERPath[4];   /* USER logical drive path */
+FATFS USERFatFS;    /* File system object for USER logical drive */
+FIL USERFile;       /* File object for USER */
 
 /* USER CODE BEGIN Variables */
 
@@ -29,8 +29,8 @@ FIL USBHFile;       /* File object for USBH */
 
 void MX_FATFS_Init(void)
 {
-  /*## FatFS: Link the USBH driver ###########################*/
-  retUSBH = FATFS_LinkDriver(&USBH_Driver, USBHPath);
+  /*## FatFS: Link the USER driver ###########################*/
+  retUSER = FATFS_LinkDriver(&USER_Driver, USERPath);
 
   /* USER CODE BEGIN Init */
   /* additional user code for init */
