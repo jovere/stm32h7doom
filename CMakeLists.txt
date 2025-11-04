@@ -37,6 +37,59 @@ add_executable(${CMAKE_PROJECT_NAME})
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
 
+# Configure Python interpreter for filesystem generation
+# Use venv Python if available (has pyfatfs), otherwise fall back to system Python
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.venv/bin/python3")
+    set(Python3_EXECUTABLE "${CMAKE_CURRENT_SOURCE_DIR}/.venv/bin/python3")
+    message(STATUS "Using venv Python: ${Python3_EXECUTABLE}")
+else()
+    # Fall back to system Python
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    message(STATUS "Using system Python: ${Python3_EXECUTABLE}")
+endif()
+
+# QSPI Filesystem Generation
+# Configure the WAD file to include in the filesystem
+set(QSPI_WAD_FILE "${CMAKE_CURRENT_SOURCE_DIR}/QSPI_FILESYSTEM_EXAMPLE.md")
+#set(QSPI_WAD_FILE "" CACHE STRING "Doom wad file to be put into the filesystem")
+set(QSPI_FS_BIN "${CMAKE_CURRENT_BINARY_DIR}/qspi_fs.bin")
+set(QSPI_FS_OBJ "${CMAKE_CURRENT_BINARY_DIR}/qspi_fs.o")
+
+if(QSPI_WAD_FILE)
+    if(NOT EXISTS "${QSPI_WAD_FILE}")
+        message(FATAL_ERROR "QSPI_WAD_FILE not found: ${QSPI_WAD_FILE}")
+    endif()
+
+    # Add custom command to generate filesystem image
+    add_custom_command(
+        OUTPUT "${QSPI_FS_BIN}"
+        COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/tools/create_fatfs.py"
+                "${QSPI_FS_BIN}" "${QSPI_WAD_FILE}"
+        DEPENDS "${QSPI_WAD_FILE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/create_fatfs.py"
+        COMMENT "Generating QSPI FAT filesystem with ${QSPI_WAD_FILE}"
+        VERBATIM
+    )
+
+    # Convert binary file to object file using objcopy
+    add_custom_command(
+        OUTPUT "${QSPI_FS_OBJ}"
+        COMMAND ${CMAKE_OBJCOPY} -I binary -O elf32-littlearm
+                --rename-section .data=.qspi_fs_data,alloc,load,readonly,data,contents
+                "${QSPI_FS_BIN}" "${QSPI_FS_OBJ}"
+        DEPENDS "${QSPI_FS_BIN}"
+        COMMENT "Converting QSPI filesystem binary to object file"
+        VERBATIM
+    )
+
+    # Link the object file into the executable
+    target_sources(${CMAKE_PROJECT_NAME} PRIVATE "${QSPI_FS_OBJ}")
+
+    message(STATUS "QSPI WAD file: ${QSPI_WAD_FILE}")
+else()
+    message(STATUS "QSPI_WAD_FILE not set - QSPI filesystem will not be generated")
+    message(STATUS "To enable: cmake -DQSPI_WAD_FILE=/path/to/doom.wad ..")
+endif()
+
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined library search paths
@@ -49,6 +102,8 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/gfx.c
     Core/Src/jpeg.c
     Core/Src/images.c
+#    # QSPI FatFS disk I/O driver
+#    FATFS/Target/qspi_diskio.c
 )
 
 # Add include paths
