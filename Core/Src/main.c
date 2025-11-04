@@ -355,10 +355,10 @@ int main(void)
   while (1)
   {
       uint32_t newsystime = systime;
-      if (systime - oldtime >= 250)
+      if (newsystime - oldtime >= 250)
       {
        //   ITM->PORT[0].u8 = 'A';
-          printf("This is a test: %lu\n", systime);
+          printf("This is a test: %lu\n", newsystime);
           oldtime = newsystime;
           HAL_GPIO_TogglePin(LED3_GPIO_Port, LED3_Pin);
       }
