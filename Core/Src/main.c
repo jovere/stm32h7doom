@@ -19,10 +19,10 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "fatfs.h"
-#include "usb_host.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdio.h>
 #include "gfx.h"
 #include "images.h"
 #include "jpeg.h"
@@ -72,8 +72,6 @@ static void MX_SPI2_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_DMA2D_Init(void);
-void MX_USB_HOST_Process(void);
-
 /* USER CODE BEGIN PFP */
 void ITM_Init(void);
 HAL_StatusTypeDef SDRAM_Test(void);
@@ -332,7 +330,6 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM4_Init();
   MX_FATFS_Init();
-  MX_USB_HOST_Init();
   MX_DMA2D_Init();
   /* USER CODE BEGIN 2 */
     ITM_Init();
@@ -367,7 +364,6 @@ int main(void)
       }
 //      LCD_Write(&hltdc);
     /* USER CODE END WHILE */
-    MX_USB_HOST_Process();
 
     /* USER CODE BEGIN 3 */
   }
@@ -393,13 +389,6 @@ void SystemClock_Config(void)
 
    /* Wait till HSE is ready */
   while(LL_RCC_HSE_IsReady() != 1)
-  {
-
-  }
-  LL_RCC_HSI48_Enable();
-
-   /* Wait till HSI48 is ready */
-  while(LL_RCC_HSI48_IsReady() != 1)
   {
 
   }
@@ -1071,6 +1060,15 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
   GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+  LL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /**/
+  GPIO_InitStruct.Pin = LL_GPIO_PIN_12|LL_GPIO_PIN_11;
+  GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
+  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_MEDIUM;
+  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+  GPIO_InitStruct.Alternate = LL_GPIO_AF_10;
   LL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /**/

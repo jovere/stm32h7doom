@@ -24,10 +24,6 @@
 /-----------------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32h7xx_hal.h"
-#include "usbh_core.h"
-#include "usbh_msc.h"
-/* Handle for USB Host */
-#define hUSB_Host hUsbHostFS
 
 /*-----------------------------------------------------------------------------/
 / Function Configurations
