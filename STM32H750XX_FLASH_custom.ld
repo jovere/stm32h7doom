@@ -62,6 +62,8 @@ RAM_D3 (xrw)      : ORIGIN = 0x38000000, LENGTH = 64K
 ITCMRAM (xrw)      : ORIGIN = 0x00000000, LENGTH = 64K
 SDRAM (xrw)      : ORIGIN = 0xD0000000, LENGTH = 64M
 FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 128K
+QSPI_APP (rx)   : ORIGIN = 0x90000000, LENGTH = 2M
+QSPI_FS (rw)    : ORIGIN = 0x90200000, LENGTH = 62M
 }
 
 /* Highest address of the user mode stack */
@@ -249,6 +251,18 @@ SECTIONS
     *(.sdram_data*)
     . = ALIGN(4);
   } >SDRAM
+
+  /* QSPI File System section - embedded FAT filesystem image */
+  .qspi_fs :
+  {
+    . = ALIGN(4);
+    KEEP(*(.qspi_fs_data))
+    . = ALIGN(4);
+  } >QSPI_FS
+
+  PROVIDE( __qspi_fs_start = ORIGIN(QSPI_FS) );
+  PROVIDE( __qspi_fs_end = ORIGIN(QSPI_FS) + LENGTH(QSPI_FS) );
+  PROVIDE( __qspi_fs_size = LENGTH(QSPI_FS) );
 
   /* Remove information from the standard libraries */
   /DISCARD/ :
