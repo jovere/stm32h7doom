@@ -260,6 +260,20 @@ SECTIONS
     . = ALIGN(4);
   } >QSPI_FS
 
+  /* Optional: QSPI executable code section (XIP - Execute In Place) */
+  .qspi_app :
+  {
+    . = ALIGN(4);
+    KEEP(*(.qspi_app))
+    *(.qspi_code)
+    *(.qspi_code*)
+    . = ALIGN(4);
+  } >QSPI_APP
+
+  PROVIDE( __qspi_fs_start = ORIGIN(QSPI_FS) );
+  PROVIDE( __qspi_fs_end = ORIGIN(QSPI_FS) + LENGTH(QSPI_FS) );
+  PROVIDE( __qspi_fs_size = LENGTH(QSPI_FS) );
+
   PROVIDE( __qspi_fs_start = ORIGIN(QSPI_FS) );
   PROVIDE( __qspi_fs_end = ORIGIN(QSPI_FS) + LENGTH(QSPI_FS) );
   PROVIDE( __qspi_fs_size = LENGTH(QSPI_FS) );
