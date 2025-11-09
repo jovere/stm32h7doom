@@ -99,9 +99,9 @@ void lcd_layer_init(LTDC_HandleTypeDef* hltdc)
  *  public functions                                                   *
  *---------------------------------------------------------------------*/
 
-void lcd_init (LTDC_HandleTypeDef* hltdc)
+void lcd_init (void)
 {
-	lcd_layer_init (hltdc);
+	lcd_layer_init (&hltdc);
 
 	lcd_vsync = true;
 
@@ -191,17 +191,6 @@ void LTDC_IRQHandler (void)
 
 		lcd_refreshed = true;
 	}
-}
-
-
-void LCD_Write(LTDC_HandleTypeDef* hltdc)
-{
-    static int x = 0;
-    for (int i = 0; i < LCD_FRAME_SIZE; i++)
-    {
-        s_frameBuffer[lcd_layer][i] = i + x;
-    }
-    x++;
 }
 
 /*---------------------------------------------------------------------*

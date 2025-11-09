@@ -93,8 +93,9 @@ target_include_directories(chocdoom
         ${CMAKE_CURRENT_SOURCE_DIR}
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ../../lib/fatfs  # Only FatFS needed for file I/O (ff.h)
 )
+
+target_link_libraries(chocdoom PRIVATE stm32cubemx)
 
 # Doom game compile definitions
 target_compile_definitions(chocdoom

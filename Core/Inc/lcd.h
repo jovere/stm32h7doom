@@ -38,7 +38,7 @@ typedef enum
  *  function prototypes                                                *
  *---------------------------------------------------------------------*/
 
-void lcd_init (LTDC_HandleTypeDef* hltdc);
+void lcd_init (void);
 
 void lcd_set_layer (lcd_layers_t layer);
 
@@ -46,13 +46,9 @@ void lcd_refresh (void);
 
 void lcd_set_transparency (lcd_layers_t layer, uint8_t transparency);
 
-void LCD_Write (LTDC_HandleTypeDef* hltdc);
-
 /*---------------------------------------------------------------------*
  *  global data                                                        *
  *---------------------------------------------------------------------*/
-extern LTDC_HandleTypeDef hltdc;
-
 extern uint32_t lcd_frame_buffer;
 
 extern lcd_layers_t lcd_layer;
