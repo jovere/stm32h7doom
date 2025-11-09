@@ -347,6 +347,32 @@ int main(void)
     gfx_init();
     show_image(img_loading);
 
+    FATFS fs;
+    FRESULT res = f_mount(&fs, "0", 1);
+    if (res == FR_OK)
+    {
+        FIL file;
+        FRESULT result = f_open(&file, "0:/CMAKELIS.TXT", FA_READ);
+        if (result == FR_OK)
+        {
+            uint8_t data[512];
+            UINT bytesRead;
+            while (f_read(&file, data, 512, &bytesRead) == FR_OK && bytesRead > 0)
+            {
+                _write(0, data, bytesRead);
+            }
+        }
+        else
+        {
+            printf("Could not open \"CMAKELIS.TXT\" with result %d.\n", result);
+        }
+        f_close(&file);
+    }
+    else
+    {
+        printf("Could not mount drive with result %d.\n", res);
+    }
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -610,6 +636,42 @@ static void MX_QUADSPI_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN QUADSPI_Init 2 */
+
+    // Reset the Flash to simplest mode
+
+    QSPI_CommandTypeDef cmd;
+    cmd.DummyCycles = 0;
+    cmd.InstructionMode = QSPI_INSTRUCTION_4_LINES;
+    cmd.AddressMode = QSPI_ADDRESS_NONE;
+    cmd.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;
+    cmd.DataMode = QSPI_DATA_NONE;
+    cmd.DdrMode = QSPI_DDR_MODE_DISABLE;
+    cmd.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;
+
+    cmd.Instruction = 0x66;
+    if (HAL_QSPI_Command(&hqspi, &cmd, 1000) != HAL_OK)
+    {
+        printf("QSPI Reset Enable command failed!\n");
+    }
+
+    cmd.Instruction = 0x99;
+    if (HAL_QSPI_Command(&hqspi, &cmd, 1000) != HAL_OK)
+    {
+        printf("QSPI Reset Memory command failed!\n");
+    }
+
+    cmd.InstructionMode = QSPI_INSTRUCTION_2_LINES;
+    cmd.Instruction = 0x66;
+    if (HAL_QSPI_Command(&hqspi, &cmd, 1000) != HAL_OK)
+    {
+        printf("QSPI Reset Enable command failed!\n");
+    }
+
+    cmd.Instruction = 0x99;
+    if (HAL_QSPI_Command(&hqspi, &cmd, 1000) != HAL_OK)
+    {
+        printf("QSPI Reset Memory command failed!\n");
+    }
 
   /* USER CODE END QUADSPI_Init 2 */
 

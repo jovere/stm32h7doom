@@ -35,9 +35,18 @@
 /* Includes ------------------------------------------------------------------*/
 #include <string.h>
 #include "ff_gen_drv.h"
+#include "quadspi.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
+/* FATFS sector size */
+#define FATFS_SECTOR_SIZE           512
+
+/* QSPI memory mapped base address */
+#define QSPI_FLASH_BASE_ADDR        0x90000000
+
+/* FATFS filesystem offset in flash (2MB for application code) */
+#define FATFS_FLASH_OFFSET          (2 * 1024 * 1024)
 
 /* Private variables ---------------------------------------------------------*/
 /* Disk status */
@@ -81,7 +90,33 @@ DSTATUS USER_initialize (
 )
 {
   /* USER CODE BEGIN INIT */
-    Stat = STA_NOINIT;
+    BSP_QSPI_Init_t init_config;
+
+    /* Only support drive 0 */
+    if (pdrv != 0) {
+        Stat = STA_NOINIT;
+        return Stat;
+    }
+
+    /* Initialize QSPI flash with safe defaults (1-1-1 mode, STR) */
+    init_config.InterfaceMode = BSP_QSPI_SPI_1_1_1_MODE;
+    init_config.TransferRate = BSP_QSPI_STR_TRANSFER;
+    init_config.DualFlashMode = BSP_QSPI_DUALFLASH_DISABLE;
+
+    /* Initialize the flash */
+    if (BSP_QSPI_Init(0, &init_config) != BSP_ERROR_NONE) {
+        Stat = STA_NOINIT;
+        return Stat;
+    }
+
+    /* Enable memory-mapped mode for read operations */
+    if (BSP_QSPI_EnableMemoryMappedMode(0) != BSP_ERROR_NONE) {
+        Stat = STA_NOINIT;
+        return Stat;
+    }
+
+    /* Mark disk as ready */
+    Stat = 0;
     return Stat;
   /* USER CODE END INIT */
 }
@@ -96,7 +131,12 @@ DSTATUS USER_status (
 )
 {
   /* USER CODE BEGIN STATUS */
-    Stat = STA_NOINIT;
+    /* Only support drive 0 */
+    if (pdrv != 0) {
+        return STA_NOINIT;
+    }
+
+    /* Return current status (0 means ready, STA_NOINIT means not initialized) */
     return Stat;
   /* USER CODE END STATUS */
 }
@@ -117,6 +157,32 @@ DRESULT USER_read (
 )
 {
   /* USER CODE BEGIN READ */
+    uint32_t flash_addr;
+    uint32_t read_size;
+    uint8_t *flash_ptr;
+
+    /* Validate parameters */
+    if (pdrv != 0 || buff == NULL || count == 0) {
+        return RES_PARERR;
+    }
+
+    /* Check if disk is ready */
+    if (Stat != 0) {
+        return RES_NOTRDY;
+    }
+
+    /* Calculate flash address:
+     * Memory mapped flash starts at QSPI_FLASH_BASE_ADDR
+     * Filesystem starts at offset FATFS_FLASH_OFFSET from flash base
+     * Each sector is FATFS_SECTOR_SIZE bytes
+     */
+    flash_addr = QSPI_FLASH_BASE_ADDR + FATFS_FLASH_OFFSET + (sector * FATFS_SECTOR_SIZE);
+    read_size = count * FATFS_SECTOR_SIZE;
+
+    /* Use memory-mapped read by direct pointer dereference */
+    flash_ptr = (uint8_t *)flash_addr;
+    memcpy(buff, flash_ptr, read_size);
+
     return RES_OK;
   /* USER CODE END READ */
 }
@@ -160,6 +226,55 @@ DRESULT USER_ioctl (
 {
   /* USER CODE BEGIN IOCTL */
     DRESULT res = RES_ERROR;
+    BSP_QSPI_Info_t flash_info;
+
+    /* Validate parameters */
+    if (pdrv != 0) {
+        return RES_PARERR;
+    }
+
+    switch(cmd) {
+    case CTRL_SYNC:
+        /* Since we're in read-only mode, nothing to sync */
+        res = RES_OK;
+        break;
+
+    case GET_SECTOR_COUNT:
+        /* Return number of sectors in filesystem region
+         * Filesystem: 62 MB = (62 * 1024 * 1024) / 512 sectors
+         */
+        if (buff != NULL) {
+            *(DWORD *)buff = (62 * 1024 * 1024) / FATFS_SECTOR_SIZE;
+            res = RES_OK;
+        }
+        break;
+
+    case GET_SECTOR_SIZE:
+        /* Return sector size */
+        if (buff != NULL) {
+            *(WORD *)buff = FATFS_SECTOR_SIZE;
+            res = RES_OK;
+        }
+        break;
+
+    case GET_BLOCK_SIZE:
+        /* Return block size (erase unit) - using 64KB sectors */
+        if (buff != NULL) {
+            *(DWORD *)buff = (64 * 1024) / FATFS_SECTOR_SIZE;  /* 128 sectors per block */
+            res = RES_OK;
+        }
+        break;
+
+    case CTRL_TRIM:
+        /* TRIM is not needed for read-only operation */
+        res = RES_OK;
+        break;
+
+    default:
+        res = RES_PARERR;
+        break;
+    }
+
     return res;
   /* USER CODE END IOCTL */
 }
