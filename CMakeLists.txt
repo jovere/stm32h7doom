@@ -102,8 +102,10 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/gfx.c
     Core/Src/jpeg.c
     Core/Src/images.c
-#    # QSPI FatFS disk I/O driver
-#    FATFS/Target/qspi_diskio.c
+    # QSPI Flash and FATFS integration
+    Core/Src/mt25ql512abb.c
+    Core/Src/quadspi.c
+    FATFS/Target/user_diskio.c
 )
 
 # Add include paths
