@@ -55,7 +55,6 @@ QSPI_HandleTypeDef hqspi;
 SDRAM_HandleTypeDef hsdram1;
 
 /* USER CODE BEGIN PV */
-volatile extern uint32_t systime;
 
 /* USER CODE END PV */
 
@@ -75,7 +74,7 @@ static void MX_DMA2D_Init(void);
 /* USER CODE BEGIN PFP */
 void ITM_Init(void);
 HAL_StatusTypeDef SDRAM_Test(void);
-
+extern void D_DoomMain (void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -377,6 +376,7 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+    D_DoomMain();
   uint32_t oldtime = systime;
   while (1)
   {
@@ -388,7 +388,7 @@ int main(void)
           oldtime = newsystime;
           HAL_GPIO_TogglePin(LED3_GPIO_Port, LED3_Pin);
       }
-//      LCD_Write(&hltdc);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -601,7 +601,7 @@ static void MX_LTDC_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN LTDC_Init 2 */
-    lcd_init(&hltdc);
+    lcd_init();
   /* USER CODE END LTDC_Init 2 */
 
 }

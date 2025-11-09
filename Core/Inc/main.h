@@ -50,6 +50,16 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
 
+extern DMA2D_HandleTypeDef hdma2d;
+
+extern LTDC_HandleTypeDef hltdc;
+
+extern QSPI_HandleTypeDef hqspi;
+
+extern SDRAM_HandleTypeDef hsdram1;
+
+volatile extern uint32_t systime;
+
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/

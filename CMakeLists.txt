@@ -36,6 +36,7 @@ add_executable(${CMAKE_PROJECT_NAME})
 
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
+add_subdirectory(chocdoom)
 
 # Configure Python interpreter for filesystem generation
 # Use venv Python if available (has pyfatfs), otherwise fall back to system Python
@@ -124,7 +125,7 @@ list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)
 # Add linked libraries
 target_link_libraries(${CMAKE_PROJECT_NAME}
     stm32cubemx
-
+    chocdoom
     # Add user defined libraries
 )
 
