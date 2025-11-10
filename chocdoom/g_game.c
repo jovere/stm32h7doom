@@ -1581,7 +1581,8 @@ G_SaveGame
 }
 
 void G_DoSaveGame (void) 
-{ 
+{
+#if !defined(NOSAVE)
     char *savegame_file;
     char *temp_savegame_file;
     FRESULT res;
@@ -1643,7 +1644,8 @@ void G_DoSaveGame (void)
     players[consoleplayer].message = DEH_String(GGSAVED);
 
     // draw the pattern into the back screen
-    R_FillBackScreen ();	
+    R_FillBackScreen ();
+#endif
 } 
  
 

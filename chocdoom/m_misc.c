@@ -58,7 +58,7 @@ void M_MakeDirectory(char *path)
 {
 #ifdef _WIN32
     mkdir(path);
-#else
+#elif !defined(NOSAVE)
 	#if ORIGCODE
     mkdir(path, 0755);
 	#else
@@ -174,7 +174,7 @@ boolean M_WriteFile(char *name, void *source, int length)
 		
     return true;
 }
-#else
+#elif !defined(NOSAVE)
 boolean M_WriteFile(char *name, void *source, int length)
 {
 	FIL file;
@@ -200,6 +200,11 @@ boolean M_WriteFile(char *name, void *source, int length)
 	}
 
 	return true;
+}
+#else
+boolean M_WriteFile(char *name, void *source, int length)
+{
+    return false;
 }
 #endif
 
