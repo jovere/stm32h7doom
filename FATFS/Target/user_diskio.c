@@ -226,7 +226,6 @@ DRESULT USER_ioctl (
 {
   /* USER CODE BEGIN IOCTL */
     DRESULT res = RES_ERROR;
-    BSP_QSPI_Info_t flash_info;
 
     /* Validate parameters */
     if (pdrv != 0) {

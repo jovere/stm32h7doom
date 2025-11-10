@@ -128,7 +128,7 @@ size_t W_StdC_Read(wad_file_t *wad, unsigned int offset,
 
     // Read into the buffer.
 
-    f_readn (&stdc_wad->fstream, buffer, buffer_len, &count);
+    f_read (&stdc_wad->fstream, buffer, buffer_len, &count);
 
     return count;
 #endif
