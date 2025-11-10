@@ -694,7 +694,7 @@ bool gfx_load_img (const char* file_name, gfx_image_t* img)
 	FRESULT fres;
 	uint32_t file_size;
 	uint8_t* data;
-	uint32_t read;
+	UINT read;
 	uint16_t tmp;
 	uint32_t i;
 	bool jpeg;
@@ -704,7 +704,7 @@ bool gfx_load_img (const char* file_name, gfx_image_t* img)
 		file_size = f_size (&file);
 
 		// read first two bytes to detect file type
-		fres = f_readn (&file, (uint8_t*)&tmp, 2, &read);
+		fres = f_read (&file, (uint8_t*)&tmp, 2, &read);
 
 		if (fres != FR_OK)
 		{
@@ -725,7 +725,7 @@ bool gfx_load_img (const char* file_name, gfx_image_t* img)
 
 			data = (uint8_t*)malloc (file_size);
 
-			fres = f_readn (&file, data, file_size, &read);
+			fres = f_read (&file, data, file_size, &read);
 		}
 		else
 		{
@@ -736,19 +736,19 @@ bool gfx_load_img (const char* file_name, gfx_image_t* img)
 			img->width = tmp;
 
 			// read height
-			fres = f_readn (&file, (uint8_t*)&tmp, 2, &read);
+			fres = f_read (&file, (uint8_t*)&tmp, 2, &read);
 			img->height = tmp;
 
 			// read pixel format
-			fres = f_readn (&file, (uint8_t*)&tmp, 2, &read);
+			fres = f_read (&file, (uint8_t*)&tmp, 2, &read);
 			img->pixel_format = tmp;
 
 			// dummy read next two bytes
-			fres = f_readn (&file, (uint8_t*)&tmp, 2, &read);
+			fres = f_read (&file, (uint8_t*)&tmp, 2, &read);
 
 			data = (uint8_t*)malloc (file_size - 8);
 
-			fres = f_readn (&file, data, file_size - 8, &read);
+			fres = f_read (&file, data, file_size - 8, &read);
 		}
 
 		f_close (&file);

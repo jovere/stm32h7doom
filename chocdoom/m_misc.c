@@ -238,7 +238,7 @@ int M_ReadFile(char *name, byte **buffer)
 	FIL file;
 	int length;
 	byte		*buf;
-	unsigned long read;
+	UINT read;
 
 	if (f_open (&file, name, FA_OPEN_EXISTING | FA_READ) != FR_OK)
 	{
@@ -247,7 +247,7 @@ int M_ReadFile(char *name, byte **buffer)
 
 	length = f_size (&file);
 	buf = Z_Malloc (length, PU_STATIC, NULL);
-	f_readn (&file, buf, length, &read);
+	f_read (&file, buf, length, &read);
 	f_close (&file);
 
 	*buffer = buf;

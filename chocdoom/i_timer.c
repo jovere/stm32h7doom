@@ -127,7 +127,7 @@ int I_GetTimeMS(void)
 
 void I_Sleep(int ms)
 {
-	sleep_ms (ms);
+	HAL_Delay (ms);
 }
 
 void I_WaitVBL(int count)

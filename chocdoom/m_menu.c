@@ -506,7 +506,7 @@ void M_ReadSaveStrings(void)
     FILE   *handle;
 #else
     FIL		handle;
-    unsigned long count;
+    UINT count;
 #endif
     int     i;
     char    name[256];
