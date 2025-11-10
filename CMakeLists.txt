@@ -51,7 +51,7 @@ endif()
 
 # QSPI Filesystem Generation
 # Configure the WAD file to include in the filesystem
-set(QSPI_WAD_FILE "${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt")
+set(QSPI_WAD_FILE "${CMAKE_CURRENT_SOURCE_DIR}/DOOM1.WAD")
 #set(QSPI_WAD_FILE "" CACHE STRING "Doom wad file to be put into the filesystem")
 set(QSPI_FS_BIN "${CMAKE_CURRENT_BINARY_DIR}/qspi_fs.bin")
 set(QSPI_FS_OBJ "${CMAKE_CURRENT_BINARY_DIR}/qspi_fs.o")
