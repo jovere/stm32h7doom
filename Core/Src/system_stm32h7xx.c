@@ -90,7 +90,7 @@
 /*!< Uncomment the following line if you need to relocate the vector table
      anywhere in FLASH BANK1 or AXI SRAM, else the vector table is kept at the automatic
      remap of boot address selected */
-/* #define USER_VECT_TAB_ADDRESS */
+#define USER_VECT_TAB_ADDRESS
 
 #if defined(USER_VECT_TAB_ADDRESS)
 #if defined(DUAL_CORE) && defined(CORE_CM4)
@@ -109,11 +109,11 @@
                                                        This value must be a multiple of 0x400. */
 #endif /* VECT_TAB_SRAM */
 #else
-/*!< Uncomment the following line if you need to relocate your vector Table
-     in D1 AXI SRAM else user remap will be done in FLASH BANK1. */
-/* #define VECT_TAB_SRAM */
-#if defined(VECT_TAB_SRAM)
-#define VECT_TAB_BASE_ADDRESS   D1_AXISRAM_BASE   /*!< Vector Table base address field.
+/*!< Vector table relocated to SDRAM for execution from external memory */
+/* SDRAM base address: 0xD0000000 (FMC Bank 2) */
+#define VECT_TAB_SDRAM
+#if defined(VECT_TAB_SDRAM)
+#define VECT_TAB_BASE_ADDRESS   0xD0000000UL      /*!< Vector Table in SDRAM (FMC Bank 2).
                                                        This value must be a multiple of 0x400. */
 #define VECT_TAB_OFFSET         0x00000000U       /*!< Vector Table base offset field.
                                                        This value must be a multiple of 0x400. */
@@ -122,7 +122,7 @@
                                                        This value must be a multiple of 0x400. */
 #define VECT_TAB_OFFSET         0x00000000U       /*!< Vector Table base offset field.
                                                        This value must be a multiple of 0x400. */
-#endif /* VECT_TAB_SRAM */
+#endif /* VECT_TAB_SDRAM */
 #endif /* DUAL_CORE && CORE_CM4 */
 #endif /* USER_VECT_TAB_ADDRESS */
 /******************************************************************************/

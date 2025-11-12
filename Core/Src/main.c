@@ -321,7 +321,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_FMC_Init();
+  // MX_FMC_Init();  // DISABLED: Bootloader already initialized SDRAM - DO NOT reinitialize while running from SDRAM!
   MX_LTDC_Init();
   MX_QUADSPI_Init();
   MX_SPI1_Init();
@@ -332,16 +332,6 @@ int main(void)
   MX_DMA2D_Init();
   /* USER CODE BEGIN 2 */
     ITM_Init();
-
-    // Run SDRAM test
-    if (SDRAM_Test() == HAL_OK)
-    {
-        printf("SDRAM is stable and working correctly!\n");
-    }
-    else
-    {
-        printf("SDRAM test failed! Check timing parameters.\n");
-    }
 
     gfx_init();
     show_image(img_loading);

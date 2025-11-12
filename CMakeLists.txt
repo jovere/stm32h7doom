@@ -136,3 +136,18 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_SIZE} --format=sysv -d $<TARGET_FILE:${PROJECT_NAME}>
         COMMENT "Generating HEX and LSS files and showing size information"
 )
+
+# Post-build steps for generating QSPI flash binaries
+# These binaries are designed to be programmed to QSPI flash at specific addresses
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:${PROJECT_NAME}>
+                ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_qspi_app.bin
+        COMMENT "Generating QSPI application binary (program to QSPI at 0x90000000)"
+)
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:${PROJECT_NAME}>
+                ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_qspi_app.hex
+        COMMENT "Generating QSPI application HEX file (with QSPI addresses)"
+)
+
