@@ -23,6 +23,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include <string.h>
+
 #include "gfx.h"
 #include "images.h"
 #include "jpeg.h"
@@ -334,32 +336,13 @@ int main(void)
     ITM_Init();
 
     gfx_init();
-    show_image(img_loading);
 
     FATFS fs;
     FRESULT res = f_mount(&fs, "0", 1);
-    if (res == FR_OK)
-    {
-        FIL file;
-        FRESULT result = f_open(&file, "0:/CMAKELIS.TXT", FA_READ);
-        if (result == FR_OK)
-        {
-            uint8_t data[512];
-            UINT bytesRead;
-            while (f_read(&file, data, 512, &bytesRead) == FR_OK && bytesRead > 0)
-            {
-                _write(0, data, bytesRead);
-            }
-        }
-        else
-        {
-            printf("Could not open \"CMAKELIS.TXT\" with result %d.\n", result);
-        }
-        f_close(&file);
-    }
-    else
+    if (res != FR_OK)
     {
         printf("Could not mount drive with result %d.\n", res);
+        while (1);
     }
 
   /* USER CODE END 2 */
@@ -591,6 +574,8 @@ static void MX_LTDC_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN LTDC_Init 2 */
+    HAL_NVIC_SetPriority(LTDC_IRQn, 6, 0);
+    HAL_NVIC_EnableIRQ(LTDC_IRQn);
     lcd_init();
   /* USER CODE END LTDC_Init 2 */
 
@@ -605,6 +590,14 @@ static void MX_QUADSPI_Init(void)
 {
 
   /* USER CODE BEGIN QUADSPI_Init 0 */
+    // Make sure it's been deinitialized, since it was running in the bootloader and could be in a bad state
+    memset(&hqspi, 0, sizeof(hqspi));
+    hqspi.Instance = QUADSPI;
+    if (HAL_QSPI_DeInit(&hqspi) != HAL_OK)
+    {
+        Error_Handler();
+    }
+
 
   /* USER CODE END QUADSPI_Init 0 */
 
@@ -1206,7 +1199,7 @@ void MPU_Config(void)
 
   /** Initializes and configures the Region and the memory to be protected
   */
-  LL_MPU_ConfigRegion(LL_MPU_REGION_NUMBER1, 0x0, 0xD0000000, LL_MPU_REGION_SIZE_64MB|LL_MPU_TEX_LEVEL0|LL_MPU_REGION_FULL_ACCESS|LL_MPU_INSTRUCTION_ACCESS_DISABLE|LL_MPU_ACCESS_NOT_SHAREABLE|LL_MPU_ACCESS_CACHEABLE|LL_MPU_ACCESS_BUFFERABLE);
+  LL_MPU_ConfigRegion(LL_MPU_REGION_NUMBER1, 0x0, 0xD0000000, LL_MPU_REGION_SIZE_64MB|LL_MPU_TEX_LEVEL0|LL_MPU_REGION_FULL_ACCESS|LL_MPU_INSTRUCTION_ACCESS_ENABLE|LL_MPU_ACCESS_NOT_SHAREABLE|LL_MPU_ACCESS_CACHEABLE|LL_MPU_ACCESS_BUFFERABLE);
 
   /** Initializes and configures the Region and the memory to be protected
   */
