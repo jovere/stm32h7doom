@@ -527,7 +527,10 @@ static uint16_t gfx_measure_string (const char* str, const gfx_font_t* font, boo
  */
 void gfx_init (void)
 {
-	gfx_clear_screen (RGB565_WHITE);
+	gfx_clear_screen (0);
+    lcd_refresh();
+    gfx_clear_screen (0);
+    lcd_refresh();
 }
 
 /*
