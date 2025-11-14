@@ -173,7 +173,7 @@ void I_FinishUpdate (void)
 		{
 			index = I_VideoBuffer[y * SCREENWIDTH + x];
 
-			((uint16_t*)lcd_frame_buffer)[x * GFX_MAX_WIDTH + (GFX_MAX_WIDTH - y - 1)] = rgb565_palette[index];
+			((uint16_t*)lcd_frame_buffer)[y * GFX_MAX_WIDTH + x] = rgb565_palette[index];
 		}
 	}
 
