@@ -96,3 +96,9 @@ void ledMatrixUpdate()
     }
     toggle = !toggle;
 }
+
+void weaponAvailable(uint16_t weapons)
+{
+    leds[2] = weapons & 0xFF;
+    leds[3] = (weapons >> 8) & 0xFF;
+}
