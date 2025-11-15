@@ -17,4 +17,14 @@ uint16_t getButtonMatrix();
 
 void ledMatrixUpdate();
 
+#define LED_CHAINSAW    0x0001
+#define LED_PISTOL      0x0002
+#define LED_SHOTGUN     0x0004
+#define LED_CHAINGUN    0x0008
+#define LED_ROCKET      0x0010
+#define LED_PLASMA      0x0020
+#define LED_BFG         0x0100
+
+void weaponAvailable (uint16_t weapons);
+
 #endif //STM32DOOM_INPUTOUTPUT_H

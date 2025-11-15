@@ -58,6 +58,8 @@
 #include "dstrings.h"
 #include "sounds.h"
 
+#include "inputoutput.h"
+
 //
 // STATUS BAR DATA
 //
@@ -928,6 +930,54 @@ void ST_Ticker (void)
     st_randomnumber = M_Random();
     ST_updateWidgets();
     st_oldhealth = plyr->health;
+
+    // Update LED matrix with weapon availability
+    uint16_t led_weapons = 0;
+
+    // Slot 1: Chainsaw (no ammo needed)
+    if (plyr->weaponowned[wp_chainsaw])
+    {
+        led_weapons |= LED_CHAINSAW;
+    }
+
+    // Slot 2: Pistol (needs bullets)
+    if (plyr->weaponowned[wp_pistol] && plyr->ammo[am_clip] > 0)
+    {
+        led_weapons |= LED_PISTOL;
+    }
+
+    // Slot 3: Shotgun/Super Shotgun (needs shells)
+    if ((plyr->weaponowned[wp_shotgun] || plyr->weaponowned[wp_supershotgun])
+        && plyr->ammo[am_shell] > 0)
+    {
+        led_weapons |= LED_SHOTGUN;
+    }
+
+    // Slot 4: Chaingun (needs bullets)
+    if (plyr->weaponowned[wp_chaingun] && plyr->ammo[am_clip] > 0)
+    {
+        led_weapons |= LED_CHAINGUN;
+    }
+
+    // Slot 5: Rocket Launcher (needs rockets)
+    if (plyr->weaponowned[wp_missile] && plyr->ammo[am_misl] > 0)
+    {
+        led_weapons |= LED_ROCKET;
+    }
+
+    // Slot 6: Plasma Rifle (needs cells)
+    if (plyr->weaponowned[wp_plasma] && plyr->ammo[am_cell] > 0)
+    {
+        led_weapons |= LED_PLASMA;
+    }
+
+    // Slot 7: BFG (needs cells)
+    if (plyr->weaponowned[wp_bfg] && plyr->ammo[am_cell] > 0)
+    {
+        led_weapons |= LED_BFG;
+    }
+
+    weaponAvailable(led_weapons);
 
 }
 
