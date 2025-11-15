@@ -12,4 +12,7 @@ int32_t getEncoder2Change();
 bool getEncoder1Button();
 bool getEncoder2Button();
 
+void buttonMatrixScan();
+uint16_t getButtonMatrix();
+
 #endif //STM32DOOM_BUTTONS_H
