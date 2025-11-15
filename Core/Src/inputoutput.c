@@ -1,9 +1,10 @@
 /// @file inputs.cpp
 ///
 
-#include "inputs.h"
+#include "inputoutput.h"
 #include "main.h"
 #include "stm32h7xx_ll_tim.h"
+#include "stm32h7xx_ll_spi.h"
 #include <stdio.h>
 
 #include "stm32h7xx_ll_gpio.h"
@@ -72,4 +73,26 @@ uint16_t getButtonMatrix()
 {
     // Make the bits active high
     return ~buttonMatrixGlobal;
+}
+
+uint8_t leds[4];
+int column = 0;
+bool toggle = 0;
+void ledMatrixUpdate()
+{
+    if (toggle)
+    {
+        // Turn off output
+        LL_GPIO_SetOutputPin(LED_ENABLE_GPIO_Port, LED_ENABLE_Pin);
+        // Transmit new column data
+        LL_SPI_TransmitData16(SPI2, (1U << (column+8)) | leds[column] );
+        LL_SPI_StartMasterTransfer(SPI2);
+        column = (column + 1) & 0x3;
+    }
+    else
+    {
+        // Turn on output
+        LL_GPIO_ResetOutputPin(LED_ENABLE_GPIO_Port, LED_ENABLE_Pin);
+    }
+    toggle = !toggle;
 }

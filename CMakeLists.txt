@@ -103,7 +103,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/gfx.c
     Core/Src/jpeg.c
     Core/Src/images.c
-    Core/Src/inputs.c
+    Core/Src/inputoutput.c
     # QSPI Flash and FATFS integration
     Core/Src/mt25ql512abb.c
     Core/Src/quadspi.c

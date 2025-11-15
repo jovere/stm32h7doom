@@ -112,8 +112,6 @@ void Error_Handler(void);
 #define PB_COL2_GPIO_Port GPIOA
 #define ENCODER1_BTN_Pin LL_GPIO_PIN_1
 #define ENCODER1_BTN_GPIO_Port GPIOB
-#define CS_SPI_LED_Pin LL_GPIO_PIN_12
-#define CS_SPI_LED_GPIO_Port GPIOB
 #define PB_COL0_Pin LL_GPIO_PIN_3
 #define PB_COL0_GPIO_Port GPIOA
 #define PB_COL1_Pin LL_GPIO_PIN_4
