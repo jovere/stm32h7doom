@@ -56,8 +56,6 @@ extern LTDC_HandleTypeDef hltdc;
 
 extern QSPI_HandleTypeDef hqspi;
 
-extern SDRAM_HandleTypeDef hsdram1;
-
 volatile extern uint32_t systime;
 
 /* USER CODE END ET */
@@ -81,6 +79,7 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define NOSAVE 1
 #define CS_SPI_ETH_Pin LL_GPIO_PIN_10
 #define CS_SPI_ETH_GPIO_Port GPIOG
 #define LED3_Pin LL_GPIO_PIN_5
