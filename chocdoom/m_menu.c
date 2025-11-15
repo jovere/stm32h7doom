@@ -1509,7 +1509,7 @@ boolean M_Responder (event_t* ev)
 	    key = key_menu_forward;
 	    joywait = I_GetTime() + 5;
 	}
-	if (ev->data1&2)
+	if (ev->data1&8)
 	{
 	    key = key_menu_back;
 	    joywait = I_GetTime() + 5;

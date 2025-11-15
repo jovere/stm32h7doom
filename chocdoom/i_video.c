@@ -85,6 +85,39 @@ int usemouse = 0;
 
 int vanilla_keyboard_mapping = true;
 
+// Button matrix key mapping
+// Maps each of the 16 button positions to a key code
+// Button position layout (bit number in getButtonMatrix() result):
+//   Bit 0-3:   Column 0, Rows 0-3
+//   Bit 4-7:   Column 1, Rows 0-3
+//   Bit 8-11:  Column 2, Rows 0-3
+//   Bit 12-15: Column 3, Rows 0-3
+//
+static const uint8_t button_key_map[16] = {
+    // Column 0 (bits 0-3)
+    KEY_ESCAPE,       // Bit 0: Col 0, Row 0
+    KEY_F11,          // Bit 1: Col 0, Row 1
+    '1',              // Bit 2: Col 0, Row 2
+    '5',              // Bit 3: Col 0, Row 3
+
+    // Column 1 (bits 4-7)
+    0,                // Bit 4: Col 1, Row 0
+    KEY_TAB,          // Bit 5: Col 1, Row 1
+    '2',              // Bit 6: Col 1, Row 2
+    '6',              // Bit 7: Col 1, Row 3
+
+    // Column 2 (bits 8-11)
+    0,                // Bit 8: Col 2, Row 0
+    KEY_PAUSE,        // Bit 9: Col 2, Row 1
+    '3',              // Bit 10: Col 2, Row 2
+    '7',              // Bit 11: Col 2, Row 3
+
+    // Column 3 (bits 12-15)
+    0,                // Bit 12: Col 3, Row 0
+    0,                // Bit 13: Col 3, Row 1
+    '4',              // Bit 14: Col 3, Row 2
+    '8',              // Bit 15: Col 3, Row 3
+};
 
 typedef struct
 {
@@ -151,7 +184,8 @@ void I_StartFrame (void)
 
 void I_GetEvent (void)
 {
-	int32_t enc1Change = getEncoder1Change();
+    static uint16_t oldButtonMatrix = 0;
+    int32_t enc1Change = getEncoder1Change();
     int32_t enc2Change = getEncoder2Change();
     bool enc1Button = getEncoder1Button();
     bool enc2Button = getEncoder2Button();
@@ -159,13 +193,42 @@ void I_GetEvent (void)
 	event_t event;
 
 	event.type = ev_joystick;
-	event.data1 = 0 | (enc1Button ? 0x1 : 0) | (enc2Button ? 0x2 : 0);
+	event.data1 = 0 | (enc1Button ? 0x1 : 0) | (enc2Button ? 0x8 : 0);
 	event.data2 = enc1Change;
 	event.data3 = enc2Change;
 	event.data4 = 0;
 
 	D_PostEvent (&event);
 
+    uint16_t buttonMatrix = getButtonMatrix();
+    if (oldButtonMatrix != buttonMatrix)
+    {
+
+        uint16_t changed = oldButtonMatrix ^ buttonMatrix;
+
+        // Process each button that changed state
+        for (int i = 0; i < 16; i++)
+        {
+            if (changed & (1 << i))
+            {
+                int keycode = button_key_map[i];
+                // Skip unused keys
+                if (keycode == 0) continue;
+
+                event.type = (buttonMatrix & (1 << i)) ? ev_keydown : ev_keyup;
+                event.data1 = keycode;
+                // For ASCII keys, data2 is the same as data1; for special keys it's 0
+                event.data2 = (keycode < 128) ? keycode : 0;
+                event.data3 = 0;
+                event.data4 = 0;
+
+                D_PostEvent(&event);
+            }
+        }
+
+        printf("Key press: %04x\n", buttonMatrix);
+        oldButtonMatrix = buttonMatrix;
+    }
 }
 
 void I_StartTic (void)

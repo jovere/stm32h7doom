@@ -70,5 +70,6 @@ void buttonMatrixScan()
 
 uint16_t getButtonMatrix()
 {
-    return buttonMatrixGlobal;
+    // Make the bits active high
+    return ~buttonMatrixGlobal;
 }
