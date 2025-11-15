@@ -1,7 +1,7 @@
-/// @file inputs.h
+/// @file inputoutput.h
 ///
-#ifndef STM32DOOM_BUTTONS_H
-#define STM32DOOM_BUTTONS_H
+#ifndef STM32DOOM_INPUTOUTPUT_H
+#define STM32DOOM_INPUTOUTPUT_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -15,4 +15,6 @@ bool getEncoder2Button();
 void buttonMatrixScan();
 uint16_t getButtonMatrix();
 
-#endif //STM32DOOM_BUTTONS_H
+void ledMatrixUpdate();
+
+#endif //STM32DOOM_INPUTOUTPUT_H

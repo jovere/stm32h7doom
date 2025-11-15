@@ -36,7 +36,7 @@ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 
 #include "tables.h"
 #include "doomkeys.h"
-#include "inputs.h"
+#include "inputoutput.h"
 
 #include <stdint.h>
 #include <stdbool.h>
