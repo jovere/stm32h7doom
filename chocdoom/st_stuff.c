@@ -977,7 +977,7 @@ void ST_Ticker (void)
         led_weapons |= LED_BFG;
     }
 
-    weaponAvailable(led_weapons);
+    ledStatusBar(led_weapons, plyr->health, plyr->armorpoints);
 
 }
 
