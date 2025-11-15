@@ -68,9 +68,9 @@ void lcd_layer_init(LTDC_HandleTypeDef* hltdc)
 
     // background layer
     layerCfg.WindowX0 = 0;
-    layerCfg.WindowX1 = LCD_MAX_X - 1;
+    layerCfg.WindowX1 = LCD_MAX_X;
     layerCfg.WindowY0 = 0;
-    layerCfg.WindowY1 = LCD_MAX_Y - 1;
+    layerCfg.WindowY1 = LCD_MAX_Y;
 
     layerCfg.PixelFormat = LTDC_PIXEL_FORMAT_RGB565;
     layerCfg.Alpha = 0xFF;
