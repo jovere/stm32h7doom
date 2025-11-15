@@ -31,6 +31,7 @@ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 #include "d_event.h"
 #include "d_main.h"
 #include "i_video.h"
+#include "i_scale.h"
 #include "z_zone.h"
 
 #include "tables.h"
@@ -38,6 +39,7 @@ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 #include "lcd.h"
 #include "gfx.h"
 #include "images.h"
@@ -45,6 +47,9 @@ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 // The screen buffer; this is modified to draw things to the screen
 
 byte *I_VideoBuffer = NULL;
+
+// Scaled buffer for 640x480 output (indexed color)
+static byte *scaled_buffer = NULL;
 
 // If true, game is running as a screensaver
 
@@ -91,6 +96,9 @@ typedef struct
 
 static uint16_t rgb565_palette[256];
 
+// Current palette (8-bit RGB, needed for scaling initialization)
+static byte current_palette[256 * 3];
+
 
 // Last button state
 
@@ -115,7 +123,15 @@ void I_InitGraphics (void)
 	gfx_draw_img (&keys_img, &coords);
 	lcd_refresh ();
 
+	// Allocate video buffer (320x200, indexed color)
 	I_VideoBuffer = (byte*)Z_Malloc (SCREENWIDTH * SCREENHEIGHT, PU_STATIC, NULL);
+
+	// Allocate scaled buffer (640x480, indexed color)
+	scaled_buffer = (byte*)Z_Malloc (640 * 480, PU_STATIC, NULL);
+
+	// Initialize scaling system
+	// dest_pitch is the width of the destination buffer in bytes
+	I_InitScale(I_VideoBuffer, scaled_buffer, 640);
 
 	screenvisible = true;
 }
@@ -123,6 +139,7 @@ void I_InitGraphics (void)
 void I_ShutdownGraphics (void)
 {
 	Z_Free (I_VideoBuffer);
+	Z_Free (scaled_buffer);
 }
 
 void I_StartFrame (void)
@@ -164,16 +181,23 @@ void I_FinishUpdate (void)
 {
 	int x, y;
 	byte index;
+	int x_offset = 80;  // Center 640 pixels in 800 pixel width: (800-640)/2 = 80
 
 	lcd_vsync = false;
 
-	for (y = 0; y < SCREENHEIGHT; y++)
+	// Scale from 320x200 to 640x480 using vertical stretch mode
+	if (mode_stretch_2x.DrawScreen != NULL)
 	{
-		for (x = 0; x < SCREENWIDTH; x++)
-		{
-			index = I_VideoBuffer[y * SCREENWIDTH + x];
+		mode_stretch_2x.DrawScreen(0, 0, SCREENWIDTH, SCREENHEIGHT);
+	}
 
-			((uint16_t*)lcd_frame_buffer)[y * GFX_MAX_WIDTH + x] = rgb565_palette[index];
+	// Convert scaled buffer (640x480 indexed color) to RGB565 and center on screen
+	for (y = 0; y < 480; y++)
+	{
+		for (x = 0; x < 640; x++)
+		{
+			index = scaled_buffer[y * 640 + x];
+			((uint16_t*)lcd_frame_buffer)[y * GFX_MAX_WIDTH + (x + x_offset)] = rgb565_palette[index];
 		}
 	}
 
@@ -197,6 +221,16 @@ void I_SetPalette (byte* palette)
 {
 	int i;
 	col_t* c;
+
+	// Save the palette for scaling system
+	memcpy(current_palette, palette, 256 * 3);
+
+	// Initialize stretch mode blend tables (only needs to be done once)
+	// This will be called again if palette changes, which rebuilds the tables
+	if (mode_stretch_2x.InitMode != NULL)
+	{
+		mode_stretch_2x.InitMode(current_palette);
+	}
 
 	for (i = 0; i < 256; i++)
 	{
