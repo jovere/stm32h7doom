@@ -36,6 +36,7 @@ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 
 #include "tables.h"
 #include "doomkeys.h"
+#include "inputs.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -110,7 +111,8 @@ static bool run;
 
 void I_InitGraphics (void)
 {
-	gfx_image_t keys_img;
+#if 0
+    gfx_image_t keys_img;
 	gfx_coord_t coords;
 
 	gfx_init_img (&keys_img, 40, 320, GFX_PIXEL_FORMAT_RGB565, RGB565_BLACK);
@@ -122,7 +124,7 @@ void I_InitGraphics (void)
 
 	gfx_draw_img (&keys_img, &coords);
 	lcd_refresh ();
-
+#endif
 	// Allocate video buffer (320x200, indexed color)
 	I_VideoBuffer = (byte*)Z_Malloc (SCREENWIDTH * SCREENHEIGHT, PU_STATIC, NULL);
 
@@ -149,23 +151,21 @@ void I_StartFrame (void)
 
 void I_GetEvent (void)
 {
+	int32_t enc1Change = getEncoder1Change();
+    int32_t enc2Change = getEncoder2Change();
+    bool enc1Button = getEncoder1Button();
+    bool enc2Button = getEncoder2Button();
+
 	event_t event;
-	bool button_state;
-#if 0
-	button_state = button_read ();
 
-	if (last_button_state != button_state)
-	{
-		last_button_state = button_state;
+	event.type = ev_joystick;
+	event.data1 = 0 | (enc1Button ? 0x1 : 0) | (enc2Button ? 0x2 : 0);
+	event.data2 = enc1Change;
+	event.data3 = enc2Change;
+	event.data4 = 0;
 
-		event.type = last_button_state ? ev_keydown : ev_keyup;
-		event.data1 = KEY_FIRE;
-		event.data2 = -1;
-		event.data3 = -1;
+	D_PostEvent (&event);
 
-		D_PostEvent (&event);
-	}
-#endif
 }
 
 void I_StartTic (void)
