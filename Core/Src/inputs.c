@@ -49,10 +49,10 @@ void buttonMatrixScan()
     uint32_t portData = LL_GPIO_ReadInputPort(PB_ROW0_GPIO_Port);
 
     uint8_t rowData = 0;
-    rowData |= ((portData >> 10) & 1) << 0;
-    rowData |= ((portData >> 9) & 1) << 1;
-    rowData |= ((portData >> 11) & 1) << 2;
-    rowData |= ((portData >> 8) & 1) << 3;
+    rowData |= ((portData >> __builtin_ctz(PB_ROW0_Pin)) & 1) << 0;
+    rowData |= ((portData >> __builtin_ctz(PB_ROW1_Pin)) & 1) << 1;
+    rowData |= ((portData >> __builtin_ctz(PB_ROW2_Pin)) & 1) << 2;
+    rowData |= ((portData >> __builtin_ctz(PB_ROW3_Pin)) & 1) << 3;
 
     buttonMatrixTemp &= ~(0xF << (currentColumn * 4));
     buttonMatrixTemp |= (rowData & 0xF) << (currentColumn * 4);
