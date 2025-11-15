@@ -25,6 +25,6 @@ void ledMatrixUpdate();
 #define LED_PLASMA      0x0020
 #define LED_BFG         0x0100
 
-void weaponAvailable (uint16_t weapons);
+void ledStatusBar (uint16_t weapons, uint8_t health, uint8_t armor);
 
 #endif //STM32DOOM_INPUTOUTPUT_H

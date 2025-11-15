@@ -97,8 +97,24 @@ void ledMatrixUpdate()
     toggle = !toggle;
 }
 
-void weaponAvailable(uint16_t weapons)
+void ledStatusBar(uint16_t weapons, uint8_t health, uint8_t armor)
 {
     leds[2] = weapons & 0xFF;
     leds[3] = (weapons >> 8) & 0xFF;
+
+    // Health bar (6 bits in leds[0] with mask 0x3F)
+    // Every 20% health lights another bit, from lowest (100%+) to highest (alive)
+    // Calculate number of LEDs to light (0-6)
+    uint8_t num_leds = health >= 100 ? 6 : (health > 0 ? health / 20 + 1 : 0);
+
+    // Create LED pattern: shift and mask to get the right number of high bits
+    leds[0] = (0x3F << (6 - num_leds)) & 0x3F;
+
+    // Armor bar (5 bits in leds[1] with mask 0x1F)
+    // Every 20% armor lights another bit (no LED for armor < 20%)
+    // Calculate number of LEDs to light (0-5)
+    uint8_t armor_leds_count = armor >= 100 ? 5 : armor / 20;
+
+    // Create LED pattern: shift and mask to get the right number of high bits
+    leds[1] = (0x1F << (5 - armor_leds_count)) & 0x1F;
 }
