@@ -1645,8 +1645,10 @@ void G_DoSaveGame (void)
 
     // draw the pattern into the back screen
     R_FillBackScreen ();
+#else
+    gameaction = ga_nothing;
 #endif
-} 
+}
  
 
 //
