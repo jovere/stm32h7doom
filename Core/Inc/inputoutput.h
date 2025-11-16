@@ -17,6 +17,8 @@ uint16_t getButtonMatrix();
 
 void ledMatrixUpdate();
 
+bool getRunLock();
+
 #define LED_CHAINSAW    0x0001
 #define LED_PISTOL      0x0002
 #define LED_SHOTGUN     0x0004

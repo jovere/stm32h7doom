@@ -117,4 +117,14 @@ void ledStatusBar(uint16_t weapons, uint8_t health, uint8_t armor)
 
     // Create LED pattern: shift and mask to get the right number of high bits
     leds[1] = (0x1F << (5 - armor_leds_count)) & 0x1F;
+
+    // Run lock indicator (bit 4 of leds[3])
+    if (getRunLock())
+    {
+        leds[3] |= 0x10;  // Set bit 4
+    }
+    else
+    {
+        leds[3] &= ~0x10;  // Clear bit 4
+    }
 }
