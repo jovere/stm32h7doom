@@ -102,13 +102,13 @@ static const uint8_t button_key_map[16] = {
 
     // Column 1 (bits 4-7)
     0,                // Bit 4: Col 1, Row 0
-    KEY_TAB,          // Bit 5: Col 1, Row 1
+    KEY_RSHIFT,       // Bit 5: Col 1, Row 1
     '2',              // Bit 6: Col 1, Row 2
     '6',              // Bit 7: Col 1, Row 3
 
     // Column 2 (bits 8-11)
     0,                // Bit 8: Col 2, Row 0
-    KEY_PAUSE,        // Bit 9: Col 2, Row 1
+    KEY_TAB,          // Bit 9: Col 2, Row 1
     '3',              // Bit 10: Col 2, Row 2
     '7',              // Bit 11: Col 2, Row 3
 
@@ -118,6 +118,10 @@ static const uint8_t button_key_map[16] = {
     '4',              // Bit 14: Col 3, Row 2
     '8',              // Bit 15: Col 3, Row 3
 };
+
+// Run lock toggle state
+static bool run_lock = false;
+static uint16_t prev_button_matrix = 0;
 
 typedef struct
 {
@@ -201,6 +205,25 @@ void I_GetEvent (void)
 	D_PostEvent (&event);
 
     uint16_t buttonMatrix = getButtonMatrix();
+
+    // Check if RSHIFT button (bit 5) was just pressed to toggle run lock
+    if ((buttonMatrix & (1 << 5)) && !(prev_button_matrix & (1 << 5)))
+    {
+        run_lock = !run_lock;
+    }
+    prev_button_matrix = buttonMatrix;
+
+    // If run lock is ON, send RSHIFT keydown event every frame
+    if (run_lock)
+    {
+        event.type = ev_keydown;
+        event.data1 = KEY_RSHIFT;
+        event.data2 = 0;
+        event.data3 = 0;
+        event.data4 = 0;
+        D_PostEvent(&event);
+    }
+
     if (oldButtonMatrix != buttonMatrix)
     {
 
@@ -214,6 +237,9 @@ void I_GetEvent (void)
                 int keycode = button_key_map[i];
                 // Skip unused keys
                 if (keycode == 0) continue;
+
+                // Skip RSHIFT when run lock is active (toggle handles it)
+                if (keycode == KEY_RSHIFT && run_lock) continue;
 
                 event.type = (buttonMatrix & (1 << i)) ? ev_keydown : ev_keyup;
                 event.data1 = keycode;
@@ -229,6 +255,11 @@ void I_GetEvent (void)
         printf("Key press: %04x\n", buttonMatrix);
         oldButtonMatrix = buttonMatrix;
     }
+}
+
+bool getRunLock(void)
+{
+    return run_lock;
 }
 
 void I_StartTic (void)
