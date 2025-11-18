@@ -44,6 +44,7 @@ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 #include "lcd.h"
 #include "gfx.h"
 #include "images.h"
+#include "lwip.h"
 
 // The screen buffer; this is modified to draw things to the screen
 
@@ -150,7 +151,7 @@ void I_ShutdownGraphics (void)
 
 void I_StartFrame (void)
 {
-
+    MX_LWIP_Process();
 }
 
 void I_GetEvent (void)

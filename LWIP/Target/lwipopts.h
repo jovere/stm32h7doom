@@ -56,7 +56,7 @@
 /*----- Value in opt.h for SYS_LIGHTWEIGHT_PROT: 1 -----*/
 #define SYS_LIGHTWEIGHT_PROT 0
 /*----- Value in opt.h for MEM_ALIGNMENT: 1 -----*/
-#define MEM_ALIGNMENT 4
+#define MEM_ALIGNMENT 32
 /*----- Default Value for H7 devices: 0x30004000 -----*/
 #define LWIP_RAM_HEAP_POINTER 0x30004000
 /*----- Value supported for H7 devices: 1 -----*/
