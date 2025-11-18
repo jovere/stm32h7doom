@@ -252,6 +252,17 @@ SECTIONS
     . = ALIGN(4);
   } >SDRAM
 
+  /* Ethernet DMA descriptors and buffers - must be in RAM_D2 for DMA access */
+  .EthernetData (NOLOAD) :
+  {
+    . = ABSOLUTE(0x30000000);
+    *(.RxDecripSection)
+    . = ALIGN(32);
+    *(.TxDecripSection)
+    . = ALIGN(32);
+    *(.Rx_PoolSection)
+  } >RAM_D2
+
   /* QSPI File System section - embedded FAT filesystem image */
   .qspi_fs :
   {
