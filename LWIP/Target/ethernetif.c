@@ -264,6 +264,10 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
     if(i >= ETH_TX_DESC_CNT)
       return ERR_IF;
 
+    if (((uint32_t)(q->payload) & 31) != 0 )
+    {
+        fatal_error("Payload pointer isn't on a 32 byte alignment!");
+    }
     Txbuffer[i].buffer = q->payload;
     Txbuffer[i].len = q->len;
 
