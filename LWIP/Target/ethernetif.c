@@ -264,10 +264,6 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
     if(i >= ETH_TX_DESC_CNT)
       return ERR_IF;
 
-    if (((uint32_t)(q->payload) & 31) != 0 )
-    {
-        fatal_error("Payload pointer isn't on a 32 byte alignment!");
-    }
     Txbuffer[i].buffer = q->payload;
     Txbuffer[i].len = q->len;
 
@@ -307,7 +303,11 @@ static struct pbuf * low_level_input(struct netif *netif)
 
   if(RxAllocStatus == RX_ALLOC_OK)
   {
-    HAL_ETH_ReadData(&heth, (void **)&p);
+    HAL_ETH_ReadData(&heth, (void**)&p);
+    if (p != NULL)
+    {
+      printf("[RX-READ] SUCCESS! Got packet, len=%d\n", p->tot_len);
+    }
   }
 
   return p;
@@ -547,6 +547,7 @@ void HAL_ETH_MspInit(ETH_HandleTypeDef* ethHandle)
     PA7     ------> ETH_CRS_DV
     PC4     ------> ETH_RXD0
     PC5     ------> ETH_RXD1
+    PC1     ------> ETH_PHY_RESET
     */
     GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_13;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
@@ -574,6 +575,12 @@ void HAL_ETH_MspInit(ETH_HandleTypeDef* ethHandle)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF11_ETH;
+    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = GPIO_PIN_1;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /* USER CODE END ETH_MspInit 1 */
@@ -744,7 +751,11 @@ void ethernet_link_check_state(struct netif *netif)
       MACConf.DuplexMode = duplex;
       MACConf.Speed = speed;
       HAL_ETH_SetMACConfig(&heth, &MACConf);
-      HAL_ETH_Start(&heth);
+
+      printf("[ETH] Calling HAL_ETH_Start()...\n");
+      HAL_StatusTypeDef status = HAL_ETH_Start(&heth);
+      printf("[ETH] HAL_ETH_Start() returned: %d (0=OK)\n", status);
+
       netif_set_up(netif);
       netif_set_link_up(netif);
     }
@@ -784,6 +795,48 @@ void HAL_ETH_RxLinkCallback(void **pStart, void **pEnd, uint8_t *buff, uint16_t 
 
   /* Get the struct pbuf from the buff address. */
   p = (struct pbuf *)(buff - offsetof(RxBuff_t, buff));
+
+  // Start Debug Code
+  /* Verify pbuf->payload now correctly points to buff */
+  if (p->payload != buff)
+  {
+    printf("[RX-LINK] ERROR: pbuf->payload CORRUPTED!\n");
+    printf("  payload=0x%08lX\n", (uint32_t)p->payload);
+    printf("  buff=0x%08lX (expected from callback)\n", (uint32_t)buff);
+    printf("  pbuf=0x%08lX (calculated from buff)\n", (uint32_t)p);
+
+    /* Check all 4 RX descriptors to find which one has this buffer */
+    extern ETH_DMADescTypeDef DMARxDscrTab[ETH_RX_DESC_CNT];
+    printf("\n  Checking RX descriptors:\n");
+    for (int i = 0; i < ETH_RX_DESC_CNT; i++)
+    {
+      printf("  Desc[%d]: DESC0=0x%08lX, DESC3=0x%08lX, BackupAddr0=0x%08lX\n",
+             i, DMARxDscrTab[i].DESC0, DMARxDscrTab[i].DESC3,
+             (uint32_t)DMARxDscrTab[i].BackupAddr0);
+      if (DMARxDscrTab[i].BackupAddr0 == (uint32_t)buff)
+      {
+        printf("    ^^^ This descriptor has the corrupted buffer!\n");
+        printf("    DESC0 should equal BackupAddr0, but DMA may have used wrong address\n");
+      }
+      /* Check if DESC0 points near pbuf instead of buff */
+      uint32_t desc0 = DMARxDscrTab[i].DESC0;
+      if (desc0 >= (uint32_t)p && desc0 < (uint32_t)buff)
+      {
+        printf("    ^^^ DESC0 points inside pbuf structure! (between 0x%08lX and 0x%08lX)\n",
+               (uint32_t)p, (uint32_t)buff);
+      }
+    }
+
+    printf("\n  First 32 bytes of buff: ");
+    for (int i = 0; i < 32; i++) {
+      if (i == 16) printf("\n                          ");
+      printf("%02X ", ((uint8_t*)buff)[i]);
+    }
+    printf("\n");
+    while(1); /* Halt - this is serious corruption */
+  }
+  // End Debug Code
+
   p->next = NULL;
   p->tot_len = 0;
   p->len = Length;

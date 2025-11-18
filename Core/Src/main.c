@@ -30,6 +30,7 @@
 #include "images.h"
 #include "jpeg.h"
 #include "lcd.h"
+#include "ksz8863.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -551,7 +552,7 @@ static void MX_SPI1_Init(void)
   LL_SPI_SetFIFOThreshold(SPI1, LL_SPI_FIFO_TH_01DATA);
   LL_SPI_EnableNSSPulseMgt(SPI1);
   /* USER CODE BEGIN SPI1_Init 2 */
-
+  LL_SPI_Enable(SPI1);
   /* USER CODE END SPI1_Init 2 */
 
 }

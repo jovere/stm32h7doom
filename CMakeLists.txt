@@ -108,6 +108,8 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/mt25ql512abb.c
     Core/Src/quadspi.c
     FATFS/Target/user_diskio.c
+    # Ethernet switch driver
+    LWIP/Target/ksz8863.c
 )
 
 # Add include paths
