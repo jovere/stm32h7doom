@@ -255,12 +255,20 @@ SECTIONS
   /* Ethernet DMA descriptors and buffers - must be in RAM_D2 for DMA access */
   .EthernetData (NOLOAD) :
   {
-    . = ABSOLUTE(0x30000000);
+    . = ALIGN(32);
     *(.RxDecripSection)
     . = ALIGN(32);
     *(.TxDecripSection)
     . = ALIGN(32);
     *(.Rx_PoolSection)
+    . = ALIGN(32);
+
+    . = 0x6000; /* Offset from D2 start */
+    __lwip_heap_start = .;
+    . = . + 32K;
+    __lwip_heap_end = .;
+    . = ALIGN(32);
+
   } >RAM_D2
 
   /* QSPI File System section - embedded FAT filesystem image */
