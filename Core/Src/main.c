@@ -31,6 +31,12 @@
 #include "jpeg.h"
 #include "lcd.h"
 #include "ksz8863.h"
+#include "inputoutput.h"
+
+// Doom command line arguments (avoid including m_argv.h due to type conflicts)
+extern int myargc;
+extern char **myargv;
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -78,6 +84,71 @@ extern void D_DoomMain (void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+//
+// Configure network mode based on button held at startup
+// Button layout (from inputoutput.h):
+//   ESC (bit 0): Single player (default)
+//   F11 (bit 1): Start as server
+//   '1' (bit 2): Join as client
+//
+static void ConfigureNetworkMode(void)
+{
+    uint16_t buttons;
+    extern struct netif gnetif;
+    char ip_str[16];
+
+    // Wait a moment for buttons to settle
+    HAL_Delay(100);
+
+    // Read button state
+    buttonMatrixScan();
+    HAL_Delay(10);
+    buttonMatrixScan();
+    buttons = getButtonMatrix();
+
+    // Get our IP address for display
+    snprintf(ip_str, sizeof(ip_str), "%s", ip4addr_ntoa(netif_ip4_addr(&gnetif)));
+
+    if (buttons & BUTTON_F11) {
+        printf("=================================\n");
+        printf("  DOOM MULTIPLAYER - SERVER MODE\n");
+        printf("  IP Address: %s\n", ip_str);
+        printf("  Port: 2342\n");
+        printf("=================================\n");
+        myargv[myargc] = "-server";
+        printf("DEBUG: Set myargv[%d] = '%s'\n", myargc, myargv[myargc]);
+        myargc++;
+
+    } else if (buttons & BUTTON_1) {
+        // TODO: Make server IP configurable via config file
+        static char server_arg[20] = "192.168.0.10";
+
+        printf("=================================\n");
+        printf("  DOOM MULTIPLAYER - CLIENT MODE\n");
+        printf("  Our IP: %s\n", ip_str);
+        printf("  Connecting to: %s:2342\n", server_arg);
+        printf("=================================\n");
+        myargv[myargc] = "-connect";
+        printf("DEBUG: Set myargv[%d] = '%s'\n", myargc, myargv[myargc]);
+        myargc++;
+        myargv[myargc] = server_arg;
+        printf("DEBUG: Set myargv[%d] = '%s'\n", myargc, myargv[myargc]);
+        myargc++;
+
+    } else {
+        // No button held - SINGLE PLAYER
+        printf("=================================\n");
+        printf("  DOOM - SINGLE PLAYER MODE\n");
+        printf("=================================\n");
+    }
+
+    // Debug: print all arguments
+    printf("DEBUG: Total arguments = %d\n", myargc);
+    for (int i = 0; i < myargc; i++) {
+        printf("  myargv[%d] = '%s'\n", i, myargv[i]);
+    }
+}
 
 /*
  * Show fatal error message and stop in endless loop
@@ -187,6 +258,9 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+    // Configure network mode based on startup button
+    ConfigureNetworkMode();
+
     D_DoomMain();
   while (1)
   {

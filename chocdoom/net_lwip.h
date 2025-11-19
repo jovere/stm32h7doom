@@ -1,5 +1,5 @@
 //
-// Copyright(C) 2005-2014 Simon Howard
+// Copyright(C) 2025 STM32 Port
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -12,29 +12,14 @@
 // GNU General Public License for more details.
 //
 // DESCRIPTION:
-//     List of features which can be enabled/disabled to slim down the
-//     program.
+//     Networking module using LwIP
 //
 
-#ifndef DOOM_FEATURES_H
-#define DOOM_FEATURES_H
+#ifndef NET_LWIP_H
+#define NET_LWIP_H
 
-// Enables wad merging (the '-merge' command line parameter)
+#include "net_defs.h"
 
-#undef FEATURE_WAD_MERGE
+extern net_module_t net_lwip_module;
 
-// Enables dehacked support ('-deh')
-
-#undef FEATURE_DEHACKED
-
-// Enables multiplayer support (network games)
-
-#define FEATURE_MULTIPLAYER
-
-// Enables sound output
-
-#undef FEATURE_SOUND
-
-#endif /* #ifndef DOOM_FEATURES_H */
-
-
+#endif /* #ifndef NET_LWIP_H */

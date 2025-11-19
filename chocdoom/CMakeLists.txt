@@ -24,7 +24,7 @@ set(DOOM_SOURCES
     i_cdmus.c
     i_endoom.c
     i_joystick.c
-    i_main.c
+    #i_main.c
     i_scale.c
     i_sound.c
     i_system.c
@@ -82,6 +82,18 @@ set(DOOM_SOURCES
     w_main.c
     w_wad.c
     z_zone.c
+    aes_prng.c
+    net_client.c
+    net_common.c
+    net_dedicated.c
+    net_gui.c
+    net_io.c
+    net_loop.c
+    net_lwip.c
+    net_packet.c
+    net_query.c
+    net_server.c
+    net_structrw.c
 )
 
 # Create Doom game engine static library
