@@ -39,7 +39,7 @@
 typedef struct
 {
     // Should be "IWAD" or "PWAD".
-    char		identification[4];		
+    char		identification[4];
     int			numlumps;
     int			infotableofs;
 } PACKEDATTR wadinfo_t;
@@ -57,12 +57,10 @@ typedef struct
 //
 
 // Location of each lump on disk.
-
-lumpinfo_t *lumpinfo;		
+lumpinfo_t *lumpinfo;
 unsigned int numlumps = 0;
 
 // Hash table for fast lookups
-
 static lumpinfo_t **lumphash;
 
 // Hash function used for lump names.
@@ -540,8 +538,7 @@ void W_GenerateHashTable(void)
 {
     unsigned int i;
 
-    // Free the old hash table, if there is one
-
+    // Free the old hash table, if there is one:
     if (lumphash != NULL)
     {
         Z_Free(lumphash);

@@ -211,7 +211,9 @@ STlib_updateMultIcon
     int			x;
     int			y;
 
-    if (*mi->on && (mi->oldinum != *mi->inum || refresh) && (*mi->inum != -1))
+    if (*mi->on
+	&& (mi->oldinum != *mi->inum || refresh)
+	&& (*mi->inum!=-1))
     {
 	if (mi->oldinum != -1)
 	{
