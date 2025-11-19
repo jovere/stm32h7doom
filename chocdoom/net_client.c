@@ -859,10 +859,16 @@ static void NET_CL_ParsePacket(net_packet_t *packet)
 // "Run" the client code: check for new packets, send packets as
 // needed
 
+// Forward declaration for LwIP processing
+extern void MX_LWIP_Process(void);
+
 void NET_CL_Run(void)
 {
     net_addr_t *addr;
     net_packet_t *packet;
+
+    // Process LwIP stack to handle incoming/outgoing UDP packets
+    MX_LWIP_Process();
     
     if (!net_client_connected)
     {

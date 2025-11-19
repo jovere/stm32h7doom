@@ -317,6 +317,10 @@ static boolean NET_LwIP_RecvPacket(net_addr_t **addr, net_packet_t **packet)
 {
     rx_queue_entry_t *entry;
 
+    // Process LwIP stack to handle incoming/outgoing UDP packets
+    extern void MX_LWIP_Process(void);
+    MX_LWIP_Process();
+
     if (rx_queue_count == 0)
         return false;
 
