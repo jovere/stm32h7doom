@@ -385,6 +385,26 @@ char *M_StrCaseStr(char *haystack, char *needle)
 }
 
 //
+// Safe version of strdup() that checks the string was successfully
+// allocated.
+//
+
+char *M_StringDuplicate(const char *orig)
+{
+    char *result;
+
+    result = strdup(orig);
+
+    if (result == NULL)
+    {
+        I_Error("Failed to duplicate string (length %i)\n",
+                strlen(orig));
+    }
+
+    return result;
+}
+
+//
 // String replace function.
 //
 
@@ -452,12 +472,20 @@ char *M_StringReplace(const char *haystack, const char *needle,
 
 boolean M_StringCopy(char *dest, const char *src, size_t dest_size)
 {
+    size_t len;
+
     if (dest_size >= 1)
     {
         dest[dest_size - 1] = '\0';
         strncpy(dest, src, dest_size - 1);
     }
-    return strlen(dest) == strlen(src);
+    else
+    {
+        return false;
+    }
+
+    len = strlen(dest);
+    return src[len] == '\0';
 }
 
 // Safe string concat function that works like OpenBSD's strlcat().
