@@ -37,6 +37,10 @@
 extern int myargc;
 extern char **myargv;
 
+// Static storage for command line arguments
+#define MAX_ARGS 10
+static char *argv_storage[MAX_ARGS];
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -98,6 +102,11 @@ static void ConfigureNetworkMode(void)
     extern struct netif gnetif;
     char ip_str[16];
 
+    // Initialize argv array
+    myargv = argv_storage;
+    myargc = 1;
+    argv_storage[0] = "doom";  // Program name
+
     // Wait a moment for buttons to settle
     HAL_Delay(100);
 
@@ -122,7 +131,7 @@ static void ConfigureNetworkMode(void)
 
     } else if (buttons & BUTTON_1) {
         // TODO: Make server IP configurable via config file
-        static char server_arg[20] = "192.168.0.10";
+        static char server_arg[20] = "192.168.0.100";
 
         printf("=================================\n");
         printf("  DOOM MULTIPLAYER - CLIENT MODE\n");
