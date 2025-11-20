@@ -46,6 +46,7 @@ set(MX_Application_Src
     ${CMAKE_CURRENT_SOURCE_DIR}/../../FATFS/Target/user_diskio.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../FATFS/App/fatfs.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/main.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/unique_id.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/stm32h7xx_it.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/stm32h7xx_hal_msp.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/sysmem.c

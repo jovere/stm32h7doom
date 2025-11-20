@@ -131,7 +131,7 @@ static void ConfigureNetworkMode(void)
 
     } else if (buttons & BUTTON_1) {
         // TODO: Make server IP configurable via config file
-        static char server_arg[20] = "192.168.0.100";
+        static char server_arg[20] = "192.168.0.10";
 
         printf("=================================\n");
         printf("  DOOM MULTIPLAYER - CLIENT MODE\n");
