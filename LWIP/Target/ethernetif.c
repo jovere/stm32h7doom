@@ -33,7 +33,7 @@
 
 /* Within 'USER CODE' section, code will be kept by default at each generation */
 /* USER CODE BEGIN 0 */
-
+#include "unique_id.h"
 /* USER CODE END 0 */
 
 /* Private define ------------------------------------------------------------*/
@@ -174,7 +174,13 @@ static void low_level_init(struct netif *netif)
   heth.Init.RxBuffLen = 1536;
 
   /* USER CODE BEGIN MACADDRESS */
-
+  // Use unique ID for last 3 bytes of MAC address
+  // First 3 bytes (00:80:E1) are the OUI (Organizationally Unique Identifier)
+  // Last 3 bytes from Word 0 (X/Y coordinates - highest entropy)
+  // Byte 1: X-coord low, Byte 2: Y-coord high, Byte 3: Y-coord low
+  MACAddr[3] = GetUniqueIDByte(1);
+  MACAddr[4] = GetUniqueIDByte(2);
+  MACAddr[5] = GetUniqueIDByte(3);
   /* USER CODE END MACADDRESS */
 
   hal_eth_init_status = HAL_ETH_Init(&heth);
