@@ -1819,10 +1819,6 @@ void NET_SV_Run(void)
     net_packet_t *packet;
     int i;
 
-    // Process LwIP stack to handle incoming/outgoing UDP packets
-    extern void MX_LWIP_Process(void);
-    MX_LWIP_Process();
-
     if (!server_initialized)
     {
         return;
