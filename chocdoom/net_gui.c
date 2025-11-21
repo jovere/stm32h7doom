@@ -32,28 +32,39 @@
 
 void NET_WaitForLaunch(void)
 {
+    int wait_time = 0;
+    boolean auto_launched = false;
+
     printf("NET_WaitForLaunch: Waiting for game to start...\n");
 
-    // Simple polling loop - wait for server to start the game
-    while (true)
+    // Wait for game to launch (works for both client and server modes)
+    // net_waiting_for_launch is set by the network code
+    while (net_waiting_for_launch)
     {
         // Process network packets
         NET_CL_Run();
         NET_SV_Run();
 
-        // Check if we've started
-        if (!NET_CL_GetSettings(NULL))
+        // Check if connection failed
+        if (!net_client_connected)
         {
-            // Game has started or connection failed
+            printf("NET_WaitForLaunch: Lost connection to server\n");
             break;
+        }
+
+        // Auto-launch for server mode after getting wait data
+        // If we're the controller (server), launch after 2 seconds
+        if (!auto_launched && net_client_received_wait_data &&
+            net_client_wait_data.is_controller && wait_time > 200)
+        {
+            printf("NET_WaitForLaunch: Auto-launching game (server mode)\n");
+            NET_CL_LaunchGame();
+            auto_launched = true;
         }
 
         // Small delay to avoid busy-waiting
         I_Sleep(10);
-
-        // Process video updates (keeps screen alive)
-        I_StartFrame();
-        I_FinishUpdate();
+        wait_time += 10;
     }
 
     printf("NET_WaitForLaunch: Game starting!\n");

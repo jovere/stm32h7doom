@@ -645,13 +645,9 @@ static uint32_t aes_ror32(uint32_t word, unsigned int shift)
 // Portable byte swap for little-endian
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #define cpu_to_le32(x) (x)
-#else
-#define cpu_to_le32(x) __builtin_bswap32(x)
-#endif
-// Portable byte swap for little-endian
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #define le32_to_cpu(x) (x)
 #else
+#define cpu_to_le32(x) __builtin_bswap32(x)
 #define le32_to_cpu(x) __builtin_bswap32(x)
 #endif
 
