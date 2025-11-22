@@ -26,22 +26,32 @@
 #include "net_gui.h"
 #include "net_server.h"
 #include "inputoutput.h"
+#include "debug_console.h"
 
-// Stub implementation for STM32 - no textscreen GUI
-// The game will wait for launch without displaying a fancy GUI
-// You could extend this to show status on the LCD if desired
+// Stub implementation for STM32 - LCD-based debug console
+// Shows network status on screen during lobby
 
 void NET_WaitForLaunch(void)
 {
     boolean launched = false;
+    boolean console_init = false;
 
-    printf("NET_WaitForLaunch: Waiting for game to start...\n");
-    printf("  Press button '1' to start the game\n");
+    DPRINT("NET_WaitForLaunch: Waiting for game to start...");
+    DPRINT("  Press button '1' to start the game");
 
     // Wait for game to launch (works for both client and server modes)
     // net_waiting_for_launch is set by the network code
     while (net_waiting_for_launch)
     {
+        // Initialize console on first iteration (after gfx is ready)
+        if (!console_init)
+        {
+            DebugConsole_Init();
+            DebugConsole_Print("=== DOOM MULTIPLAYER LOBBY ===");
+            DebugConsole_Print("");
+            console_init = true;
+        }
+
         // Process network packets
         NET_CL_Run();
         NET_SV_Run();
@@ -49,8 +59,47 @@ void NET_WaitForLaunch(void)
         // Check if connection failed
         if (!net_client_connected)
         {
-            printf("NET_WaitForLaunch: Lost connection to server\n");
+            DPRINT("NET_WaitForLaunch: Lost connection to server");
+            DebugConsole_Draw();
             break;
+        }
+
+        // Display network status if we have data
+        if (net_client_received_wait_data)
+        {
+            static int last_player_count = -1;
+            if (net_client_wait_data.num_players != last_player_count)
+            {
+                DebugConsole_Clear();
+                DebugConsole_Print("=== DOOM MULTIPLAYER LOBBY ===");
+                DebugConsole_Print("");
+
+                DPRINT("Players: %d / %d",
+                       net_client_wait_data.num_players,
+                       net_client_wait_data.max_players);
+
+                // Show player list
+                for (int i = 0; i < net_client_wait_data.num_players; i++)
+                {
+                    char marker = (i == net_client_wait_data.consoleplayer) ? '>' : ' ';
+                    DPRINT(" %c %d. %s (%s)", marker, i + 1,
+                           net_client_wait_data.player_names[i],
+                           net_client_wait_data.player_addrs[i]);
+                }
+
+                DebugConsole_Print("");
+                if (net_client_wait_data.is_controller)
+                {
+                    DebugConsole_Print("You are the server!");
+                    DebugConsole_Print("Press button '1' to start");
+                }
+                else
+                {
+                    DebugConsole_Print("Waiting for server to start...");
+                }
+
+                last_player_count = net_client_wait_data.num_players;
+            }
         }
 
         // If we're the controller (server), check for button press to launch
@@ -59,15 +108,21 @@ void NET_WaitForLaunch(void)
             uint16_t buttons = getButtonMatrix();
             if (buttons & BUTTON_1)
             {
-                printf("NET_WaitForLaunch: Button pressed - launching game!\n");
+                DPRINT("Button pressed - launching game!");
+                DebugConsole_Draw();
                 NET_CL_LaunchGame();
                 launched = true;
             }
         }
 
+        // Update display
+        DebugConsole_Draw();
+
         // Small delay to avoid busy-waiting
         I_Sleep(10);
     }
 
-    printf("NET_WaitForLaunch: Game starting!\n");
+    DPRINT("NET_WaitForLaunch: Game starting!");
+    DebugConsole_Draw();
+    I_Sleep(1000);  // Show final message briefly
 }
