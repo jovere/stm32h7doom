@@ -7,17 +7,35 @@
 #include <stdbool.h>
 #include "doomkeys.h"
 
+// Encoder Configuration
+
 int32_t getEncoder1Change();
 int32_t getEncoder2Change();
 bool getEncoder1Button();
 bool getEncoder2Button();
 
+// Button Matrix Configuration
+
+#define BUTTON_1        (1U << 2U)
+#define BUTTON_2        (1U << 6U)
+#define BUTTON_3        (1U << 10U)
+#define BUTTON_4        (1U << 14U)
+#define BUTTON_5        (1U << 3U)
+#define BUTTON_6        (1U << 7U)
+#define BUTTON_7        (1U << 11U)
+#define BUTTON_8        (1U << 15U)
+#define BUTTON_ESC      (1U << 0U)
+#define BUTTON_F11      (1U << 1U)
+#define BUTTON_AUTOMAP  (1U << 9U)
+#define BUTTON_RUN      (1U << 5U)
+
 void buttonMatrixScan();
 uint16_t getButtonMatrix();
-
-void ledMatrixUpdate();
-
 bool getRunLock();
+
+extern const uint8_t button_key_map[16];
+
+// LED Configuration
 
 #define LED_CHAINSAW    0x0001
 #define LED_PISTOL      0x0002
@@ -27,6 +45,7 @@ bool getRunLock();
 #define LED_PLASMA      0x0020
 #define LED_BFG         0x0100
 
+void ledMatrixUpdate();
 void ledStatusBar (uint16_t weapons, uint8_t health, uint8_t armor);
 
 #endif //STM32DOOM_INPUTOUTPUT_H
