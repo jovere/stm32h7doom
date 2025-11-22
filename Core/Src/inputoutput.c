@@ -19,6 +19,40 @@ static const uint32_t columnPins[4] = {
     PB_COL0_Pin, PB_COL1_Pin, PB_COL2_Pin, PB_COL3_Pin
 };
 
+// Button matrix key mapping
+// Maps each of the 16 button positions to a key code
+// Button position layout (bit number in getButtonMatrix() result):
+//   Bit 0-3:   Column 0, Rows 0-3
+//   Bit 4-7:   Column 1, Rows 0-3
+//   Bit 8-11:  Column 2, Rows 0-3
+//   Bit 12-15: Column 3, Rows 0-3
+//
+const uint8_t button_key_map[16] = {
+    // Column 0 (bits 0-3)
+    KEY_ESCAPE,       // Bit 0: Col 0, Row 0
+    KEY_F11,          // Bit 1: Col 0, Row 1
+    '1',              // Bit 2: Col 0, Row 2
+    '5',              // Bit 3: Col 0, Row 3
+
+    // Column 1 (bits 4-7)
+    0,                // Bit 4: Col 1, Row 0
+    KEY_RSHIFT,       // Bit 5: Col 1, Row 1
+    '2',              // Bit 6: Col 1, Row 2
+    '6',              // Bit 7: Col 1, Row 3
+
+    // Column 2 (bits 8-11)
+    0,                // Bit 8: Col 2, Row 0
+    KEY_TAB,          // Bit 9: Col 2, Row 1
+    '3',              // Bit 10: Col 2, Row 2
+    '7',              // Bit 11: Col 2, Row 3
+
+    // Column 3 (bits 12-15)
+    0,                // Bit 12: Col 3, Row 0
+    0,                // Bit 13: Col 3, Row 1
+    '4',              // Bit 14: Col 3, Row 2
+    '8',              // Bit 15: Col 3, Row 3
+};
+
 int32_t getEncoder1Change()
 {
     uint16_t encoder = LL_TIM_GetCounter(TIM3);
