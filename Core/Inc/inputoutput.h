@@ -24,10 +24,13 @@ bool getEncoder2Button();
 #define BUTTON_6        (1U << 7U)
 #define BUTTON_7        (1U << 11U)
 #define BUTTON_8        (1U << 15U)
-#define BUTTON_ESC      (1U << 0U)
-#define BUTTON_F11      (1U << 1U)
-#define BUTTON_AUTOMAP  (1U << 9U)
+#define BUTTON_T1       (1U << 0U)
+#define BUTTON_T2       (1U << 4U)
+#define BUTTON_T3       (1U << 8U)
+#define BUTTON_T4       (1U << 12U)
+#define BUTTON_T5       (1U << 1U)
 #define BUTTON_RUN      (1U << 5U)
+#define BUTTON_AUTOMAP  (1U << 9U)
 
 void buttonMatrixScan();
 uint16_t getButtonMatrix();

@@ -119,7 +119,7 @@ static void ConfigureNetworkMode(void)
     // Get our IP address for display
     snprintf(ip_str, sizeof(ip_str), "%s", ip4addr_ntoa(netif_ip4_addr(&gnetif)));
 
-    if (buttons & BUTTON_F11) {
+    if (buttons & BUTTON_T5) {
         printf("=================================\n");
         printf("  DOOM MULTIPLAYER - SERVER MODE\n");
         printf("  IP Address: %s\n", ip_str);
