@@ -238,6 +238,22 @@ void SysTick_Handler(void)
   /* USER CODE BEGIN SysTick_IRQn 1 */
     buttonMatrixScan();
     ledMatrixUpdate();
+
+    // Check for reset combination (T1 + T5) - works at any time
+    static uint8_t reset_counter = 0;
+    uint16_t buttons = getButtonMatrix();
+    if ((buttons & (BUTTON_T1 | BUTTON_T5)) == (BUTTON_T1 | BUTTON_T5))
+    {
+        reset_counter++;
+        if (reset_counter > 10)  // Hold for ~10ms to debounce
+        {
+            NVIC_SystemReset();
+        }
+    }
+    else
+    {
+        reset_counter = 0;
+    }
   /* USER CODE END SysTick_IRQn 1 */
 }
 
