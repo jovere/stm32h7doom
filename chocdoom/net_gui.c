@@ -25,6 +25,7 @@
 #include "net_client.h"
 #include "net_gui.h"
 #include "net_server.h"
+#include "inputoutput.h"
 
 // Stub implementation for STM32 - no textscreen GUI
 // The game will wait for launch without displaying a fancy GUI
@@ -32,10 +33,10 @@
 
 void NET_WaitForLaunch(void)
 {
-    int wait_time = 0;
-    boolean auto_launched = false;
+    boolean launched = false;
 
     printf("NET_WaitForLaunch: Waiting for game to start...\n");
+    printf("  Press button '1' to start the game\n");
 
     // Wait for game to launch (works for both client and server modes)
     // net_waiting_for_launch is set by the network code
@@ -52,19 +53,20 @@ void NET_WaitForLaunch(void)
             break;
         }
 
-        // Auto-launch for server mode after getting wait data
-        // If we're the controller (server), launch after 2 seconds
-        if (!auto_launched && net_client_received_wait_data &&
-            net_client_wait_data.is_controller && wait_time > 200)
+        // If we're the controller (server), check for button press to launch
+        if (!launched && net_client_wait_data.is_controller)
         {
-            printf("NET_WaitForLaunch: Auto-launching game (server mode)\n");
-            NET_CL_LaunchGame();
-            auto_launched = true;
+            uint16_t buttons = getButtonMatrix();
+            if (buttons & BUTTON_1)
+            {
+                printf("NET_WaitForLaunch: Button pressed - launching game!\n");
+                NET_CL_LaunchGame();
+                launched = true;
+            }
         }
 
         // Small delay to avoid busy-waiting
         I_Sleep(10);
-        wait_time += 10;
     }
 
     printf("NET_WaitForLaunch: Game starting!\n");

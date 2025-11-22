@@ -980,7 +980,7 @@ boolean NET_CL_Connect(net_addr_t *addr, net_connect_data_t *data)
 
         // time out after 5 seconds
 
-        if (nowtime - start_time > 5000)
+        if (nowtime - start_time > 60000)
         {
             break;
         }
