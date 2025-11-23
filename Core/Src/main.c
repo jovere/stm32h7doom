@@ -119,16 +119,30 @@ static void ConfigureNetworkMode(void)
     // Get our IP address for display
     snprintf(ip_str, sizeof(ip_str), "%s", ip4addr_ntoa(netif_ip4_addr(&gnetif)));
 
-    if (buttons & BUTTON_T5) {
+    if (buttons & BUTTON_T4) {
         printf("=================================\n");
-        printf("  DOOM MULTIPLAYER - SERVER MODE\n");
+        printf("  DOOM COOPERATIVE - SERVER MODE\n");
         printf("  IP Address: %s\n", ip_str);
         printf("  Port: 2342\n");
         printf("=================================\n");
         myargv[myargc] = "-server";
         printf("DEBUG: Set myargv[%d] = '%s'\n", myargc, myargv[myargc]);
         myargc++;
-
+    } else if (buttons & BUTTON_T5) {
+        printf("=================================\n");
+        printf("  DOOM DEATHMATCH - SERVER MODE\n");
+        printf("  IP Address: %s\n", ip_str);
+        printf("  Port: 2342\n");
+        printf("=================================\n");
+        myargv[myargc] = "-server";
+        printf("DEBUG: Set myargv[%d] = '%s'\n", myargc, myargv[myargc]);
+        myargc++;
+        myargv[myargc] = "-altdeath";
+        printf("DEBUG: Set myargv[%d] = '%s'\n", myargc, myargv[myargc]);
+        myargc++;
+        myargv[myargc] = "-nomonsters";
+        printf("DEBUG: Set myargv[%d] = '%s'\n", myargc, myargv[myargc]);
+        myargc++;
     } else if (buttons & BUTTON_1) {
         // TODO: Make server IP configurable via config file
         static char server_arg[20] = "192.168.0.10";
