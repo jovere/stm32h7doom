@@ -79,7 +79,7 @@ void MX_LWIP_Init(void)
   // (Button matrix is updated by interrupt, no need to call buttonMatrixScan)
   HAL_Delay(100);
   uint16_t buttons = getButtonMatrix();
-  network_server_mode = (buttons & BUTTON_T5) ? true : false;
+  network_server_mode = (buttons & (BUTTON_T5|BUTTON_T4)) ? true : false;
 
   // Use unique ID for IP address (unless server mode)
   // Server always uses .10, clients use unique ID-based address
