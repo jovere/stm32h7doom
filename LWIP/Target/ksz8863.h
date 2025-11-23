@@ -63,7 +63,12 @@ extern "C" {
 #define KSZ8863_CHIP_ID0_DEFAULT    0x88
 #define KSZ8863_CHIP_ID1_FAMILY     0x30
 
-/* Port Control Register Bits */
+/* Port Control 1 Register Bits */
+#define KSZ8863_PORT_CTRL1_SNIFFER      (1 << 7)
+#define KSZ8863_PORT_CTRL1_RX_SNIFF     (1 << 6)
+#define KSZ8863_PORT_CTRL1_TX_SNIFF     (1 << 5)
+
+/* Port Control 2 Register Bits */
 #define KSZ8863_PORT_CTRL2_TRANSMIT_EN  (1 << 2)
 #define KSZ8863_PORT_CTRL2_RECEIVE_EN   (1 << 1)
 #define KSZ8863_PORT_CTRL2_LEARNING_DIS (1 << 0)
