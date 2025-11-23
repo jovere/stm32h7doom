@@ -174,6 +174,27 @@ int32_t KSZ8863_WriteReg(uint8_t reg_addr, uint8_t value)
 }
 
 /**
+ * @brief Set port with mask
+ */
+int32_t KSZ8863_WriteRegMasked(uint8_t reg_addr, uint8_t mask, uint8_t value)
+{
+    int32_t ret;
+    uint8_t reg_value;
+
+    /* Configure Port 3 (Internal MAC port to STM32) */
+    /* Enable transmit and receive, enable learning */
+    ret = KSZ8863_ReadReg(reg_addr, &reg_value);
+    if (ret != 0) return -1;
+
+    reg_value = (reg_value & ~mask) | (mask & value);
+
+    ret = KSZ8863_WriteReg(reg_addr, reg_value);
+    if (ret != 0) return -1;
+
+    return 0;
+}
+
+/**
  * @brief Perform software reset of KSZ8863
  */
 int32_t KSZ8863_SoftReset(void)
@@ -227,7 +248,6 @@ uint8_t KSZ8863_GetLinkStatus(void)
 int32_t KSZ8863_Init(void)
 {
     uint8_t chip_id0 = 0, chip_id1 = 0;
-    uint8_t reg_value = 0;
     int32_t ret;
 
     /* Ensure CS is high initially */
@@ -253,40 +273,43 @@ int32_t KSZ8863_Init(void)
     }
 
     /* Basic switch configuration */
-
-    /* Configure Port 3 (Internal MAC port to STM32) */
     /* Enable transmit and receive, enable learning */
-    ret = KSZ8863_ReadReg(KSZ8863_REG_PORT3_CTRL2, &reg_value);
-    if (ret != 0) return -1;
+    {
+        uint8_t const mask = KSZ8863_PORT_CTRL2_TRANSMIT_EN
+            | KSZ8863_PORT_CTRL2_RECEIVE_EN
+            | KSZ8863_PORT_CTRL2_LEARNING_DIS;
+        uint8_t const value = KSZ8863_PORT_CTRL2_TRANSMIT_EN | KSZ8863_PORT_CTRL2_RECEIVE_EN;
 
-    reg_value |= KSZ8863_PORT_CTRL2_TRANSMIT_EN;
-    reg_value |= KSZ8863_PORT_CTRL2_RECEIVE_EN;
-    reg_value &= ~KSZ8863_PORT_CTRL2_LEARNING_DIS; /* Enable learning */
+        ret = KSZ8863_WriteRegMasked(KSZ8863_REG_PORT3_CTRL2, mask, value);
+        if (ret != 0) return -1;
 
-    ret = KSZ8863_WriteReg(KSZ8863_REG_PORT3_CTRL2, reg_value);
-    if (ret != 0) return -1;
+        ret = KSZ8863_WriteRegMasked(KSZ8863_REG_PORT1_CTRL2, mask, value);
+        if (ret != 0) return -1;
 
-    /* Configure Port 1 (External port) */
-    ret = KSZ8863_ReadReg(KSZ8863_REG_PORT1_CTRL2, &reg_value);
-    if (ret != 0) return -1;
+        ret = KSZ8863_WriteRegMasked(KSZ8863_REG_PORT2_CTRL2, mask, value);
+        if (ret != 0) return -1;
+    }
 
-    reg_value |= KSZ8863_PORT_CTRL2_TRANSMIT_EN;
-    reg_value |= KSZ8863_PORT_CTRL2_RECEIVE_EN;
-    reg_value &= ~KSZ8863_PORT_CTRL2_LEARNING_DIS;
+#ifdef SNIFF_PORT
+    {
+        uint8_t const mask = KSZ8863_PORT_CTRL1_SNIFFER;
+        uint8_t const value = KSZ8863_PORT_CTRL1_SNIFFER;
 
-    ret = KSZ8863_WriteReg(KSZ8863_REG_PORT1_CTRL2, reg_value);
-    if (ret != 0) return -1;
+        ret = KSZ8863_WriteRegMasked(KSZ8863_REG_PORT1_CTRL1, mask, value);
+        if (ret != 0) return -1;
+    }
 
-    /* Configure Port 2 (External port) */
-    ret = KSZ8863_ReadReg(KSZ8863_REG_PORT2_CTRL2, &reg_value);
-    if (ret != 0) return -1;
+    {
+        uint8_t const mask = KSZ8863_PORT_CTRL1_TX_SNIFF | KSZ8863_PORT_CTRL1_RX_SNIFF;
+        uint8_t const value = KSZ8863_PORT_CTRL1_TX_SNIFF | KSZ8863_PORT_CTRL1_RX_SNIFF;
 
-    reg_value |= KSZ8863_PORT_CTRL2_TRANSMIT_EN;
-    reg_value |= KSZ8863_PORT_CTRL2_RECEIVE_EN;
-    reg_value &= ~KSZ8863_PORT_CTRL2_LEARNING_DIS;
+        ret = KSZ8863_WriteRegMasked(KSZ8863_REG_PORT2_CTRL1, mask, value);
+        if (ret != 0) return -1;
 
-    ret = KSZ8863_WriteReg(KSZ8863_REG_PORT2_CTRL2, reg_value);
-    if (ret != 0) return -1;
+        ret = KSZ8863_WriteRegMasked(KSZ8863_REG_PORT3_CTRL1, mask, value);
+        if (ret != 0) return -1;
+    }
+#endif
 
     /* Enable switch engine */
     ret = KSZ8863_WriteReg(KSZ8863_REG_CHIP_ID0, (1 << 0));
