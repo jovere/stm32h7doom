@@ -105,6 +105,10 @@ target_include_directories(chocdoom
         ${CMAKE_CURRENT_SOURCE_DIR}
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
+        # App directory needed for platform functions (HAL_Delay, systime, etc.)
+        ${CMAKE_SOURCE_DIR}/App
+        # Use all middleware includes (FatFs, LwIP, etc.)
+        ${MX_Middleware_Include_Dirs}
 )
 
 target_link_libraries(chocdoom PRIVATE stm32cubemx)
@@ -114,6 +118,7 @@ target_compile_definitions(chocdoom
     PUBLIC
         DOOM
         HAVE_CONFIG_H=0
+        NOSAVE          # Disable save game (FatFs is read-only)
     PRIVATE
         # No STM32 definitions needed - pure game engine
 )

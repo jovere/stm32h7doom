@@ -10,21 +10,27 @@ set(MX_Defines_Syms
     $<$<CONFIG:Debug>:DEBUG>
 )
 
-# STM32CubeMX generated include paths
+# STM32CubeMX shared infrastructure include paths
+# Only paths that are truly shared between bootloader and application
+# NOTE: Does NOT include App/ or bootloader/ - each target adds its own for hal_conf.h
 set(MX_Include_Dirs
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/CMSIS/Device/ST/STM32H7xx/Include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/CMSIS/Include
+)
+
+# Middleware include paths (application-only)
+# These are added to the application target, not the bootloader
+set(MX_Middleware_Include_Dirs
     ${CMAKE_CURRENT_SOURCE_DIR}/../../FATFS/Target
     ${CMAKE_CURRENT_SOURCE_DIR}/../../FATFS/App
     ${CMAKE_CURRENT_SOURCE_DIR}/../../LWIP/App
     ${CMAKE_CURRENT_SOURCE_DIR}/../../LWIP/Target
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../App
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Common
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/LwIP/src/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/LwIP/system
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/FatFs/src
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/LwIP/src/include/netif/ppp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/CMSIS/Device/ST/STM32H7xx/Include
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/LwIP/src/include/lwip
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/LwIP/src/include/lwip/apps
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/LwIP/src/include/lwip/priv
@@ -36,8 +42,9 @@ set(MX_Include_Dirs
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/LwIP/src/include/compat/posix/sys
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/LwIP/src/include/compat/stdc
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/LwIP/system/arch
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Drivers/CMSIS/Include
 )
+# Export to parent scope for use by chocdoom and other app-only targets
+set(MX_Middleware_Include_Dirs ${MX_Middleware_Include_Dirs} PARENT_SCOPE)
 
 # STM32CubeMX generated middleware glue code
 # These are middleware-specific files, not application code
@@ -196,25 +203,39 @@ add_library(stm32cubemx INTERFACE)
 target_include_directories(stm32cubemx INTERFACE ${MX_Include_Dirs})
 target_compile_definitions(stm32cubemx INTERFACE ${MX_Defines_Syms})
 
-# Create STM32_Drivers static library
-add_library(STM32_Drivers OBJECT)
-target_sources(STM32_Drivers PRIVATE ${STM32_Drivers_Src})
-target_link_libraries(STM32_Drivers PUBLIC stm32cubemx)
+# Create STM32_Drivers interface library
+# INTERFACE so each target (bootloader, app) compiles with their own hal_conf.h
+add_library(STM32_Drivers INTERFACE)
+target_sources(STM32_Drivers INTERFACE ${STM32_Drivers_Src})
+target_link_libraries(STM32_Drivers INTERFACE stm32cubemx)
 
 
 # Create LwIP static library
 add_library(LwIP OBJECT)
 target_sources(LwIP PRIVATE ${LwIP_Src})
 target_link_libraries(LwIP PUBLIC stm32cubemx)
+# LwIP needs middleware paths + App for hal_conf.h (app-only library)
+target_include_directories(LwIP PRIVATE
+    ${MX_Middleware_Include_Dirs}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../App
+)
 
 # Create FatFs static library
 add_library(FatFs OBJECT)
 target_sources(FatFs PRIVATE ${FatFs_Src})
 target_link_libraries(FatFs PUBLIC stm32cubemx)
+# FatFs needs middleware paths + App for hal_conf.h (app-only library)
+target_include_directories(FatFs PRIVATE
+    ${MX_Middleware_Include_Dirs}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../App
+)
 
 # Add STM32CubeMX generated middleware glue code to the application
 # Note: Application-specific sources are added by App/CMakeLists.txt
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${MX_Middleware_App_Src})
+
+# Add middleware include paths to the application (not shared with bootloader)
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${MX_Middleware_Include_Dirs})
 
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE ${MX_LINK_DIRS})
