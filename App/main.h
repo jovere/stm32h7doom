@@ -79,7 +79,6 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define NOSAVE 1
 #define CS_SPI_ETH_Pin LL_GPIO_PIN_10
 #define CS_SPI_ETH_GPIO_Port GPIOG
 #define LED3_Pin LL_GPIO_PIN_5

@@ -22,8 +22,9 @@
 /*-----------------------------------------------------------------------------/
 / Additional user header to be used
 /-----------------------------------------------------------------------------*/
-#include "main.h"
-#include "stm32h7xx_hal.h"
+/* Removed unnecessary includes - ffconf.h only contains configuration defines */
+/* #include "main.h" */
+/* #include "stm32h7xx_hal.h" */
 
 /*-----------------------------------------------------------------------------/
 / Function Configurations
