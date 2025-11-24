@@ -36,7 +36,18 @@ add_executable(${CMAKE_PROJECT_NAME})
 
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
+
+# Add Common peripheral code (shared between bootloader and app)
+add_subdirectory(Common)
+
+# Add application code
+add_subdirectory(App)
+
+# Add chocdoom game engine
 add_subdirectory(chocdoom)
+
+# Add bootloader (separate target)
+#add_subdirectory(bootloader)
 
 # Configure Python interpreter for filesystem generation
 # Use venv Python if available (has pyfatfs), otherwise fall back to system Python
@@ -98,15 +109,10 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
-    # Add user sources here
-    Core/Src/lcd.c
-    Core/Src/gfx.c
-    Core/Src/jpeg.c
-    Core/Src/images.c
-    Core/Src/inputoutput.c
-    # QSPI Flash and FATFS integration
-    Core/Src/mt25ql512abb.c
-    Core/Src/quadspi.c
+    # App-specific sources are added by App/CMakeLists.txt
+    # Common sources (QSPI, etc.) are in CommonPeripherals library
+
+    # Additional user sources not in subdirectories
     FATFS/Target/user_diskio.c
     # Ethernet switch driver
     LWIP/Target/ksz8863.c
@@ -128,6 +134,7 @@ list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)
 # Add linked libraries
 target_link_libraries(${CMAKE_PROJECT_NAME}
     stm32cubemx
+    CommonPeripherals
     chocdoom
     # Add user defined libraries
 )

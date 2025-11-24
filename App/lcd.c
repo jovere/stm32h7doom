@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "stm32h7xx.h"
-#include "../Inc/gfx.h"
+#include "gfx.h"
 #include "lcd.h"
 #include "main.h"
 

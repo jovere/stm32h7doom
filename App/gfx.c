@@ -20,7 +20,7 @@
 #include "stm32h7xx.h"
 #include "ff.h"
 #include "gfx.h"
-#include "../Inc/jpeg.h"
+#include "jpeg.h"
 #include "lcd.h"
 #include "main.h"
 
