@@ -1,4 +1,5 @@
 /Drivers/CMSIS/Device/ST/STM32H7xx/Include/*
 /Drivers/CMSIS/DSP/*
+**/.claude/
 *.[pP][dD][fF]
 *.[wW][aA][dD]
