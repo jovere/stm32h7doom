@@ -13,6 +13,7 @@ Example:
 Requirements:
     mkfs.vfat (usually pre-installed on Linux)
     python3
+    pyfatfs - for putting files onto filesystem
 """
 
 import os
