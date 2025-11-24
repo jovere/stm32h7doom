@@ -7,7 +7,6 @@ set(APP_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/stm32h7xx_it.c
     ${CMAKE_CURRENT_SOURCE_DIR}/stm32h7xx_hal_msp.c
     ${CMAKE_CURRENT_SOURCE_DIR}/system_stm32h7xx.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/sysmem.c
 
     # Utility files
     ${CMAKE_CURRENT_SOURCE_DIR}/unique_id.c

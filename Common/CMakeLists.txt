@@ -8,6 +8,7 @@ target_sources(CommonPeripherals INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/quadspi.c
     ${CMAKE_CURRENT_SOURCE_DIR}/mt25ql512abb.c
     ${CMAKE_CURRENT_SOURCE_DIR}/syscalls.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/sysmem.c
 )
 
 target_include_directories(CommonPeripherals INTERFACE
