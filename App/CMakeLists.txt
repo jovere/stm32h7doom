@@ -85,22 +85,9 @@ set_target_properties(stm32doom PROPERTIES
 
 # Post-build steps for generating HEX and LSS files
 add_custom_command(TARGET stm32doom POST_BUILD
+    COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:stm32doom> ${CMAKE_CURRENT_BINARY_DIR}/stm32doom.bin
     COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:stm32doom> ${CMAKE_CURRENT_BINARY_DIR}/stm32doom.hex
     COMMAND ${CMAKE_OBJDUMP} -h -S $<TARGET_FILE:stm32doom> > ${CMAKE_CURRENT_BINARY_DIR}/stm32doom.lss
     COMMAND ${CMAKE_SIZE} --format=sysv -d $<TARGET_FILE:stm32doom>
-    COMMENT "Generating HEX and LSS files and showing size information"
-)
-
-# Post-build steps for generating QSPI flash binaries
-# These binaries are designed to be programmed to QSPI flash at specific addresses
-add_custom_command(TARGET stm32doom POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:stm32doom>
-            ${CMAKE_CURRENT_BINARY_DIR}/stm32doom_qspi_app.bin
-    COMMENT "Generating QSPI application binary (program to QSPI at 0x90000000)"
-)
-
-add_custom_command(TARGET stm32doom POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:stm32doom>
-            ${CMAKE_CURRENT_BINARY_DIR}/stm32doom_qspi_app.hex
-    COMMENT "Generating QSPI application HEX file (with QSPI addresses)"
+    COMMENT "Generating HEX, BIN, and LSS files and showing size information (program to QSPI at 0x90000000)"
 )

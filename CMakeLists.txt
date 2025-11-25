@@ -65,3 +65,17 @@ add_subdirectory(App)
 
 # Bootloader target (bootloader)
 add_subdirectory(bootloader)
+
+# Combined HEX file generation
+# Merges bootloader (0x08000000) and application (0x90000000) hex files
+# Intel HEX format is sparse, so no gap between address spaces
+add_custom_target(combined ALL
+    DEPENDS stm32boot stm32doom
+
+    # Combine hex files: remove EOF from bootloader hex, append app hex
+    COMMAND head -n -1 ${CMAKE_BINARY_DIR}/bootloader/stm32boot.hex > ${CMAKE_BINARY_DIR}/stm32doom_combined.hex
+    COMMAND cat ${CMAKE_BINARY_DIR}/App/stm32doom.hex >> ${CMAKE_BINARY_DIR}/stm32doom_combined.hex
+
+    COMMENT "Creating combined bootloader+application HEX file"
+    VERBATIM
+)
