@@ -64,4 +64,4 @@ add_subdirectory(chocdoom)
 add_subdirectory(App)
 
 # Bootloader target (bootloader)
-#add_subdirectory(bootloader)
+add_subdirectory(bootloader)
