@@ -47,7 +47,7 @@ set(MX_Middleware_Include_Dirs
 set(MX_Middleware_Include_Dirs ${MX_Middleware_Include_Dirs} PARENT_SCOPE)
 
 # STM32CubeMX generated middleware glue code
-# These are middleware-specific files, not application code
+# Exported to parent scope for application to use
 set(MX_Middleware_App_Src
     ${CMAKE_CURRENT_SOURCE_DIR}/../../LWIP/Target/ethernetif.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../LWIP/Target/eth_custom_phy_interface.c
@@ -55,6 +55,8 @@ set(MX_Middleware_App_Src
     ${CMAKE_CURRENT_SOURCE_DIR}/../../FATFS/Target/user_diskio.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../FATFS/App/fatfs.c
 )
+# Export to parent scope for use by App
+set(MX_Middleware_App_Src ${MX_Middleware_App_Src} PARENT_SCOPE)
 
 # STM32 HAL/LL Drivers
 # Note: system_stm32h7xx.c is NOT included here because it's different for bootloader vs app
@@ -230,21 +232,8 @@ target_include_directories(FatFs PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../../App
 )
 
-# Add STM32CubeMX generated middleware glue code to the application
-# Note: Application-specific sources are added by App/CMakeLists.txt
-target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${MX_Middleware_App_Src})
-
-# Add middleware include paths to the application (not shared with bootloader)
-target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${MX_Middleware_Include_Dirs})
-
-# Link directories setup
-target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE ${MX_LINK_DIRS})
-
-# Add libraries to the project
-target_link_libraries(${CMAKE_PROJECT_NAME} ${MX_LINK_LIBS})
-
-# Add the map file to the list of files to be removed with 'clean' target
-set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES ADDITIONAL_CLEAN_FILES ${CMAKE_PROJECT_NAME}.map)
+# Note: Middleware sources and includes are now handled by App/CMakeLists.txt
+# This file only defines the libraries that both bootloader and application can use
 
 # Validate that STM32CubeMX code is compatible with C standard
 if((CMAKE_C_STANDARD EQUAL 90) OR (CMAKE_C_STANDARD EQUAL 99))
