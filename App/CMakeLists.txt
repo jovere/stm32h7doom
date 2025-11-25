@@ -1,38 +1,106 @@
-# Application-specific sources
-# This includes both user-added and STM32CubeMX generated application files
+# Application Build Configuration
+# Main application that runs from QSPI flash (0x90000000) → SDRAM (0xD0000000)
 
-set(APP_SOURCES
+# QSPI Filesystem Generation
+# Generate the QSPI filesystem image and convert it to an object file
+set(QSPI_FS_BIN "${CMAKE_CURRENT_BINARY_DIR}/qspi_fs.bin")
+set(QSPI_FS_OBJ "${CMAKE_CURRENT_BINARY_DIR}/qspi_fs.o")
+
+if(QSPI_WAD_FILE AND EXISTS "${QSPI_WAD_FILE}")
+    # Generate filesystem image
+    add_custom_command(
+        OUTPUT "${QSPI_FS_BIN}"
+        COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/tools/create_fatfs.py"
+                "${QSPI_FS_BIN}" "${QSPI_WAD_FILE}"
+        DEPENDS "${QSPI_WAD_FILE}" "${CMAKE_SOURCE_DIR}/tools/create_fatfs.py"
+        COMMENT "Generating QSPI FAT filesystem with ${QSPI_WAD_FILE}"
+        VERBATIM
+    )
+
+    # Convert binary to object file
+    add_custom_command(
+        OUTPUT "${QSPI_FS_OBJ}"
+        COMMAND ${CMAKE_OBJCOPY} -I binary -O elf32-littlearm
+                --rename-section .data=.qspi_fs_data,alloc,load,readonly,data,contents
+                "${QSPI_FS_BIN}" "${QSPI_FS_OBJ}"
+        DEPENDS "${QSPI_FS_BIN}"
+        COMMENT "Converting QSPI filesystem binary to object file"
+        VERBATIM
+    )
+endif()
+
+# Create application executable
+add_executable(stm32doom
     # Core application files
-    ${CMAKE_CURRENT_SOURCE_DIR}/main.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/stm32h7xx_it.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/stm32h7xx_hal_msp.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/system_stm32h7xx.c
+    main.c
+    stm32h7xx_it.c
+    stm32h7xx_hal_msp.c
+    system_stm32h7xx.c
 
     # Utility files
-    ${CMAKE_CURRENT_SOURCE_DIR}/unique_id.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/debug_console.c
+    unique_id.c
+    debug_console.c
 
     # User application files
-    ${CMAKE_CURRENT_SOURCE_DIR}/lcd.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/gfx.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/jpeg.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/images.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/inputoutput.c
+    lcd.c
+    gfx.c
+    jpeg.c
+    images.c
+    inputoutput.c
 
     # Startup code
     ${CMAKE_SOURCE_DIR}/startup_stm32h750xx.s
+
+    # Middleware glue code (from STM32CubeMX)
+    ${MX_Middleware_App_Src}
+
+    # Additional middleware files
+    ${CMAKE_SOURCE_DIR}/FATFS/Target/user_diskio.c
+    ${CMAKE_SOURCE_DIR}/LWIP/Target/ksz8863.c
+
+    # QSPI filesystem object (generated in root CMakeLists.txt)
+    ${QSPI_FS_OBJ}
 )
 
-# Add sources to the parent target
-# The target name will be passed from the root CMakeLists.txt
-target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${APP_SOURCES})
-
-# Add App directory to include path
-target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
+# Add include paths
+target_include_directories(stm32doom PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${MX_Middleware_Include_Dirs}
+)
+
+# Link libraries
+target_link_libraries(stm32doom
+    stm32cubemx
+    STM32_Drivers
+    CommonPeripherals
+    LwIP
+    FatFs
+    chocdoom
 )
 
 # Set application-specific linker script
-set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES
+set_target_properties(stm32doom PROPERTIES
     LINK_FLAGS "-T${CMAKE_CURRENT_SOURCE_DIR}/STM32H750XX_FLASH_custom.ld"
+)
+
+# Post-build steps for generating HEX and LSS files
+add_custom_command(TARGET stm32doom POST_BUILD
+    COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:stm32doom> ${CMAKE_CURRENT_BINARY_DIR}/stm32doom.hex
+    COMMAND ${CMAKE_OBJDUMP} -h -S $<TARGET_FILE:stm32doom> > ${CMAKE_CURRENT_BINARY_DIR}/stm32doom.lss
+    COMMAND ${CMAKE_SIZE} --format=sysv -d $<TARGET_FILE:stm32doom>
+    COMMENT "Generating HEX and LSS files and showing size information"
+)
+
+# Post-build steps for generating QSPI flash binaries
+# These binaries are designed to be programmed to QSPI flash at specific addresses
+add_custom_command(TARGET stm32doom POST_BUILD
+    COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:stm32doom>
+            ${CMAKE_CURRENT_BINARY_DIR}/stm32doom_qspi_app.bin
+    COMMENT "Generating QSPI application binary (program to QSPI at 0x90000000)"
+)
+
+add_custom_command(TARGET stm32doom POST_BUILD
+    COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:stm32doom>
+            ${CMAKE_CURRENT_BINARY_DIR}/stm32doom_qspi_app.hex
+    COMMENT "Generating QSPI application HEX file (with QSPI addresses)"
 )

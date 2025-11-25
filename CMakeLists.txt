@@ -1,17 +1,15 @@
 cmake_minimum_required(VERSION 3.22)
 
 #
-# This file is generated only once,
-# and is not re-generated if converter is called multiple times.
-#
-# User is free to modify the file as much as necessary
+# Root CMakeLists.txt - Project Orchestrator
+# This file sets up the build environment and coordinates subdirectories
+# Individual targets (application, bootloader) are built in their respective subdirectories
 #
 
 # Setup compiler settings
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS ON)
-
 
 # Define the build type
 if(NOT CMAKE_BUILD_TYPE)
@@ -31,25 +29,10 @@ message("Build type: " ${CMAKE_BUILD_TYPE})
 # Enable CMake support for ASM and C languages
 enable_language(C ASM)
 
-# Create an executable object type
-add_executable(${CMAKE_PROJECT_NAME})
+# Remove wrong libob.a library dependency when using cpp files
+list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)
 
-# Add STM32CubeMX generated sources
-add_subdirectory(cmake/stm32cubemx)
-
-# Add Common peripheral code (shared between bootloader and app)
-add_subdirectory(Common)
-
-# Add application code
-add_subdirectory(App)
-
-# Add chocdoom game engine
-add_subdirectory(chocdoom)
-
-# Add bootloader (separate target)
-#add_subdirectory(bootloader)
-
-# Configure Python interpreter for filesystem generation
+# Configure Python interpreter for QSPI filesystem generation
 # Use venv Python if available (has pyfatfs), otherwise fall back to system Python
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.venv/bin/python3")
     set(Python3_EXECUTABLE "${CMAKE_CURRENT_SOURCE_DIR}/.venv/bin/python3")
@@ -60,94 +43,25 @@ else()
     message(STATUS "Using system Python: ${Python3_EXECUTABLE}")
 endif()
 
-# QSPI Filesystem Generation
-# Configure the WAD file to include in the filesystem
+# QSPI Filesystem Generation configuration (used by App)
+# The actual generation happens in App/CMakeLists.txt where it's consumed
 set(QSPI_WAD_FILE "${CMAKE_CURRENT_SOURCE_DIR}/DOOM1.WAD")
-#set(QSPI_WAD_FILE "" CACHE STRING "Doom wad file to be put into the filesystem")
-set(QSPI_FS_BIN "${CMAKE_CURRENT_BINARY_DIR}/qspi_fs.bin")
-set(QSPI_FS_OBJ "${CMAKE_CURRENT_BINARY_DIR}/qspi_fs.o")
+message(STATUS "QSPI WAD file: ${QSPI_WAD_FILE}")
 
-if(QSPI_WAD_FILE)
-    if(NOT EXISTS "${QSPI_WAD_FILE}")
-        message(FATAL_ERROR "QSPI_WAD_FILE not found: ${QSPI_WAD_FILE}")
-    endif()
+# Add subdirectories
+# Order matters: libraries must be defined before targets that use them
 
-    # Add custom command to generate filesystem image
-    add_custom_command(
-        OUTPUT "${QSPI_FS_BIN}"
-        COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/tools/create_fatfs.py"
-                "${QSPI_FS_BIN}" "${QSPI_WAD_FILE}"
-        DEPENDS "${QSPI_WAD_FILE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/create_fatfs.py"
-        COMMENT "Generating QSPI FAT filesystem with ${QSPI_WAD_FILE}"
-        VERBATIM
-    )
+# STM32CubeMX generated infrastructure (HAL, middleware libraries)
+add_subdirectory(cmake/stm32cubemx)
 
-    # Convert binary file to object file using objcopy
-    add_custom_command(
-        OUTPUT "${QSPI_FS_OBJ}"
-        COMMAND ${CMAKE_OBJCOPY} -I binary -O elf32-littlearm
-                --rename-section .data=.qspi_fs_data,alloc,load,readonly,data,contents
-                "${QSPI_FS_BIN}" "${QSPI_FS_OBJ}"
-        DEPENDS "${QSPI_FS_BIN}"
-        COMMENT "Converting QSPI filesystem binary to object file"
-        VERBATIM
-    )
+# Common peripheral code (shared between bootloader and app)
+add_subdirectory(Common)
 
-    # Link the object file into the executable
-    target_sources(${CMAKE_PROJECT_NAME} PRIVATE "${QSPI_FS_OBJ}")
+# Doom game engine (application-only)
+add_subdirectory(chocdoom)
 
-    message(STATUS "QSPI WAD file: ${QSPI_WAD_FILE}")
-else()
-    message(STATUS "QSPI_WAD_FILE not set - QSPI filesystem will not be generated")
-    message(STATUS "To enable: cmake -DQSPI_WAD_FILE=/path/to/doom.wad ..")
-endif()
+# Application target (stm32doom)
+add_subdirectory(App)
 
-# Link directories setup
-target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
-    # Add user defined library search paths
-)
-
-# Add sources to executable
-target_sources(${CMAKE_PROJECT_NAME} PRIVATE
-    # App-specific sources are added by App/CMakeLists.txt
-    # Common sources (QSPI, etc.) are in CommonPeripherals library
-
-    # Additional user sources not in subdirectories
-    FATFS/Target/user_diskio.c
-    # Ethernet switch driver
-    LWIP/Target/ksz8863.c
-)
-
-# Remove wrong libob.a library dependency when using cpp files
-list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)
-
-# Add linked libraries
-target_link_libraries(${CMAKE_PROJECT_NAME}
-    stm32cubemx
-    CommonPeripherals
-    chocdoom
-    # Add user defined libraries
-)
-
-# Post-build steps for generating HEX and LSS files
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:${PROJECT_NAME}> ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.hex
-        COMMAND ${CMAKE_OBJDUMP} -h -S $<TARGET_FILE:${PROJECT_NAME}> > ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.lss
-        COMMAND ${CMAKE_SIZE} --format=sysv -d $<TARGET_FILE:${PROJECT_NAME}>
-        COMMENT "Generating HEX and LSS files and showing size information"
-)
-
-# Post-build steps for generating QSPI flash binaries
-# These binaries are designed to be programmed to QSPI flash at specific addresses
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:${PROJECT_NAME}>
-                ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_qspi_app.bin
-        COMMENT "Generating QSPI application binary (program to QSPI at 0x90000000)"
-)
-
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:${PROJECT_NAME}>
-                ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_qspi_app.hex
-        COMMENT "Generating QSPI application HEX file (with QSPI addresses)"
-)
-
+# Bootloader target (bootloader)
+#add_subdirectory(bootloader)
