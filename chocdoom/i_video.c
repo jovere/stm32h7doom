@@ -45,6 +45,13 @@ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 #include "gfx.h"
 #include "images.h"
 #include "lwip.h"
+#include "core_cm7.h"  // For DWT cycle counter
+#include <stdio.h>      // For printf
+#include "main.h"       // For hdma2d
+
+// Configuration: Select palette conversion method
+// Set to 1 to use DMA2D hardware acceleration, 0 to use CPU
+#define USE_DMA2D_PALETTE_CONVERT 1
 
 // The screen buffer; this is modified to draw things to the screen
 
@@ -114,22 +121,52 @@ static bool last_button_state;
 
 static bool run;
 
+#if USE_DMA2D_PALETTE_CONVERT
+//
+// Initialize DMA2D for palette conversion (indexed L8 → RGB565)
+//
+static void I_InitDMA2D_PaletteConvert(void)
+{
+	// DMA2D is already initialized in main.c, just reconfigure it for our use
+	// Note: We don't call HAL_DMA2D_Init() again to avoid re-initialization
+	DMA2D_InitTypeDef const init_struct = {};
+	hdma2d.Init = init_struct;
+
+	// Reconfigure DMA2D for memory-to-memory with pixel format conversion
+	hdma2d.Init.Mode = DMA2D_M2M_PFC;  // Memory to Memory with Pixel Format Convert
+	hdma2d.Init.ColorMode = DMA2D_OUTPUT_RGB565;
+	hdma2d.Init.OutputOffset = 160;  // 800 pixel framebuffer - 640 pixel image = 160
+	hdma2d.Init.AlphaInverted = DMA2D_REGULAR_ALPHA;
+	hdma2d.Init.RedBlueSwap = DMA2D_RB_REGULAR;
+
+	// Apply the configuration changes
+	if (HAL_DMA2D_Init(&hdma2d) != HAL_OK)
+	{
+		printf("ERROR: DMA2D reconfiguration failed\n");
+		return;
+	}
+
+	// Configure foreground layer (input): L8 indexed color
+	hdma2d.LayerCfg[1].InputColorMode = DMA2D_INPUT_L8;  // 8-bit indexed
+	hdma2d.LayerCfg[1].InputOffset = 0;  // Source is contiguous (640×480)
+	hdma2d.LayerCfg[1].AlphaMode = DMA2D_NO_MODIF_ALPHA;
+	hdma2d.LayerCfg[1].InputAlpha = 0xFF;
+	hdma2d.LayerCfg[1].AlphaInverted = DMA2D_REGULAR_ALPHA;
+	hdma2d.LayerCfg[1].RedBlueSwap = DMA2D_RB_SWAP;
+	hdma2d.LayerCfg[1].ChromaSubSampling = DMA2D_NO_CSS;
+
+	if (HAL_DMA2D_ConfigLayer(&hdma2d, 1) != HAL_OK)
+	{
+		printf("ERROR: DMA2D layer config failed\n");
+		return;
+	}
+
+	printf("DMA2D configured for palette conversion (L8 → RGB565)\n");
+}
+#endif
+
 void I_InitGraphics (void)
 {
-#if 0
-    gfx_image_t keys_img;
-	gfx_coord_t coords;
-
-	gfx_init_img (&keys_img, 40, 320, GFX_PIXEL_FORMAT_RGB565, RGB565_BLACK);
-	keys_img.pixel_data = (uint8_t*)img_keys;
-	gfx_init_img_coord (&coords, &keys_img);
-
-	gfx_draw_img (&keys_img, &coords);
-	lcd_refresh ();
-
-	gfx_draw_img (&keys_img, &coords);
-	lcd_refresh ();
-#endif
 	// Allocate video buffer (320x200, indexed color)
 	I_VideoBuffer = (byte*)Z_Malloc (SCREENWIDTH * SCREENHEIGHT, PU_STATIC, NULL);
 
@@ -139,6 +176,11 @@ void I_InitGraphics (void)
 	// Initialize scaling system
 	// dest_pitch is the width of the destination buffer in bytes
 	I_InitScale(I_VideoBuffer, scaled_buffer, 640);
+
+#if USE_DMA2D_PALETTE_CONVERT
+	// Initialize DMA2D hardware for palette conversion
+	I_InitDMA2D_PaletteConvert();
+#endif
 
 	screenvisible = true;
 }
@@ -241,8 +283,6 @@ void I_UpdateNoBlit (void)
 
 void I_FinishUpdate (void)
 {
-	int x, y;
-	byte index;
 	int x_offset = 80;  // Center 640 pixels in 800 pixel width: (800-640)/2 = 80
 
 	lcd_vsync = false;
@@ -253,7 +293,19 @@ void I_FinishUpdate (void)
 		mode_stretch_2x.DrawScreen(0, 0, SCREENWIDTH, SCREENHEIGHT);
 	}
 
-	// Convert scaled buffer (640x480 indexed color) to RGB565 and center on screen
+#if USE_DMA2D_PALETTE_CONVERT
+	// DMA2D hardware acceleration: Convert indexed L8 → RGB565
+	// Source: scaled_buffer (640×480 indexed, contiguous)
+	// Dest: lcd_frame_buffer + 80 pixels offset (centered in 800×480 framebuffer)
+	HAL_DMA2D_Start(&hdma2d, (uint32_t)scaled_buffer, lcd_frame_buffer + (80*2), 640, 480);
+
+	// Wait for DMA2D to complete
+	HAL_DMA2D_PollForTransfer(&hdma2d, 100);
+#else
+	// CPU method: Manual palette conversion
+	int x, y;
+	byte index;
+
 	for (y = 0; y < 480; y++)
 	{
 		for (x = 0; x < 640; x++)
@@ -262,6 +314,7 @@ void I_FinishUpdate (void)
 			((uint16_t*)lcd_frame_buffer)[y * GFX_MAX_WIDTH + (x + x_offset)] = rgb565_palette[index];
 		}
 	}
+#endif
 
 	lcd_refresh ();
 
@@ -297,13 +350,42 @@ void I_SetPalette (byte* palette)
 	for (i = 0; i < 256; i++)
 	{
 		c = (col_t*)palette;
-
+#if USE_GAMMA
 		rgb565_palette[i] = GFX_RGB565(gammatable[usegamma][c->r],
 									   gammatable[usegamma][c->g],
 									   gammatable[usegamma][c->b]);
-
+#else
+		rgb565_palette[i] = GFX_RGB565(c->r, c->g, c->b);
+#endif
 		palette += 3;
 	}
+
+#if USE_DMA2D_PALETTE_CONVERT
+
+	// Load RGB888 palette into DMA2D CLUT
+	SCB_CleanDCache_by_Addr((uint32_t*)current_palette, 256*3);
+	DMA2D_CLUTCfgTypeDef clut_cfg;
+	clut_cfg.pCLUT = (uint32_t*)current_palette;
+	clut_cfg.CLUTColorMode = DMA2D_CCM_RGB888;
+	clut_cfg.Size = 255;  // 256 colors (0-255)
+
+	// Wait for DMA2D to be ready before loading CLUT
+	while (HAL_DMA2D_GetState(&hdma2d) != HAL_DMA2D_STATE_READY)
+	{
+		// Wait for any ongoing transfer to complete
+	}
+
+	HAL_StatusTypeDef status = HAL_DMA2D_CLUTLoad(&hdma2d, clut_cfg, DMA2D_FOREGROUND_LAYER);
+	if (status != HAL_OK)
+	{
+		printf("ERROR: Failed to load DMA2D CLUT (status=%d)\n", status);
+	}
+	else
+	{
+		// Wait for CLUT loading to complete
+		HAL_DMA2D_PollForTransfer(&hdma2d, 100);
+	}
+#endif
 }
 
 // Given an RGB value, find the closest matching palette index.

@@ -30,7 +30,7 @@ static const uint32_t columnPins[4] = {
 const uint8_t button_key_map[16] = {
     // Column 0 (bits 0-3)
     KEY_ESCAPE,       // Bit 0: Col 0, Row 0
-    KEY_F11,          // Bit 1: Col 0, Row 1
+    0,                // Bit 1: Col 0, Row 1
     '1',              // Bit 2: Col 0, Row 2
     '5',              // Bit 3: Col 0, Row 3
 
