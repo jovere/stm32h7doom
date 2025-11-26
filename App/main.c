@@ -90,6 +90,21 @@ extern void D_DoomMain (void);
 /* USER CODE BEGIN 0 */
 
 //
+// Initialize DWT cycle counter for benchmarking
+//
+void DWT_Init(void)
+{
+    // Enable TRC (Trace)
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+
+    // Reset cycle counter
+    DWT->CYCCNT = 0;
+
+    // Enable cycle counter
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+}
+
+//
 // Configure network mode based on button held at startup
 // Button layout (from inputoutput.h):
 //   ESC (bit 0): Single player (default)
@@ -240,7 +255,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+  DWT_Init();  // Initialize cycle counter for benchmarking
   /* USER CODE END Init */
 
   /* Configure the system clock */
