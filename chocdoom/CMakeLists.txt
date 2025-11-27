@@ -99,8 +99,9 @@ set(DOOM_SOURCES
     opl/dbopl.c
     opl/opl.c
     opl/opl_queue.c
-    opl/opl_timer.c
+    opl/opl_timer_stm32.c  # STM32 version - no SDL threading
     i_oplmusic.c
+    i_opl_stm32.c         # STM32 OPL driver backend
     midifile.c
     mus2mid.c
 

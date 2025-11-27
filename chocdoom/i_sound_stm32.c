@@ -14,6 +14,8 @@
 #include "doomtype.h"
 #include "w_wad.h"
 #include "z_zone.h"
+#include "i_opl_stm32.h"
+#include "opl/opl_timer.h"
 
 /* STM32 audio driver */
 extern void Audio_Init(void);
@@ -207,11 +209,22 @@ void Audio_MixCallback(int16_t* buffer, int samples)
 {
     int i, j;
     int ch;
+    uint64_t elapsed_us;
 
     /* Clear buffer */
     memset(buffer, 0, samples * 2 * sizeof(int16_t));
 
-    /* Mix all active channels */
+    /* Calculate elapsed time for OPL timer (microseconds) */
+    /* samples at 44.1kHz: elapsed_us = (samples * 1000000) / 44100 */
+    elapsed_us = (samples * 1000000ULL) / 44100;
+
+    /* Advance OPL timer and process any pending MIDI events */
+    OPL_Timer_AdvanceTime(elapsed_us);
+
+    /* Generate and mix OPL music */
+    OPL_STM32_GenerateSamples(buffer, samples);
+
+    /* Mix all active sound effect channels */
     for (ch = 0; ch < NUM_CHANNELS; ch++)
     {
         if (!channels[ch].playing)
@@ -256,8 +269,6 @@ void Audio_MixCallback(int16_t* buffer, int samples)
             channels[ch].position += channels[ch].step;
         }
     }
-
-    /* TODO: Add music (OPL synthesis) mixing here in Phase 6 */
 }
 
 /**
