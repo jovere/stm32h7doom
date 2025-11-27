@@ -22,6 +22,8 @@
 
 /* USER CODE BEGIN Includes */
 #include "ksz8863.h"
+#include "stm32h7xx_ll_spi.h"
+#include "stm32h7xx_ll_bus.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -69,6 +71,11 @@ int32_t eth_phy_init(void)
     {
         return ETH_PHY_STATUS_ERROR;
     }
+
+    /* Disable SPI1 - no longer needed after switch configuration
+     * This frees pins PD7, PG9, PG11 for reassignment to audio (SAI2) */
+    LL_SPI_Disable(SPI1);
+    LL_APB2_GRP1_DisableClock(LL_APB2_GRP1_PERIPH_SPI1);
 /* USER CODE END PHY_INIT_1 */
     return ret;
 }

@@ -118,12 +118,16 @@ static void Ethernet_Link_Periodic_Handle(struct netif *netif)
 /* USER CODE BEGIN 4_4_1 */
 /* USER CODE END 4_4_1 */
 
+  /* DISABLED: Link polling not needed - SPI1 is disabled for audio use
+   * Ethernet switch operates independently after initialization */
+#if 0
   /* Ethernet Link every 100ms */
   if (HAL_GetTick() - EthernetLinkTimer >= 100)
   {
     EthernetLinkTimer = HAL_GetTick();
     ethernet_link_check_state(netif);
   }
+#endif
 /* USER CODE BEGIN 4_4 */
 /* USER CODE END 4_4 */
 }
