@@ -276,7 +276,8 @@ void Audio_MixCallback(int16_t* buffer, int samples)
  */
 sound_module_t sound_stm32_module =
 {
-    NULL,                           /* SoundDevices */
+    NULL,                           /* sound_devices */
+    0,                              /* num_sound_devices */
     I_STM32_InitSound,
     I_STM32_ShutdownSound,
     I_STM32_GetSfxLumpNum,

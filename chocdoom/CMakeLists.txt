@@ -125,7 +125,11 @@ target_include_directories(chocdoom
         ${MX_Middleware_Include_Dirs}
 )
 
-target_link_libraries(chocdoom PRIVATE stm32cubemx)
+target_link_libraries(chocdoom
+    PRIVATE
+        stm32cubemx
+        m  # Math library for OPL (pow, sin functions)
+)
 
 # Doom game compile definitions
 target_compile_definitions(chocdoom
