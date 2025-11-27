@@ -94,6 +94,15 @@ set(DOOM_SOURCES
     net_query.c
     net_server.c
     net_structrw.c
+
+    # OPL Music System
+    opl/dbopl.c
+    opl/opl.c
+    opl/opl_queue.c
+    opl/opl_timer.c
+    i_oplmusic.c
+    midifile.c
+    mus2mid.c
 )
 
 # Create Doom game engine static library
@@ -103,6 +112,7 @@ add_library(chocdoom STATIC ${DOOM_SOURCES})
 target_include_directories(chocdoom
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/opl  # OPL emulator headers
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
         # App directory needed for platform functions (HAL_Delay, systime, etc.)
