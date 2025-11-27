@@ -43,11 +43,24 @@
 #endif
 
 #else
-	
+
 #define SHORT(x)  ((signed short) (x))
 #define LONG(x)   ((signed int) (x))
 
 #define SYS_LITTLE_ENDIAN
+
+// STM32: Provide SDL byte-swap functions for MIDI files (big-endian)
+#include <stdint.h>
+
+static inline uint16_t SDL_SwapBE16(uint16_t x)
+{
+    return __builtin_bswap16(x);
+}
+
+static inline uint32_t SDL_SwapBE32(uint32_t x)
+{
+    return __builtin_bswap32(x);
+}
 
 #endif
 #endif
