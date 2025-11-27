@@ -19,6 +19,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef ORIGCODE
 #include "SDL.h"
@@ -461,6 +462,7 @@ void OPL_Unlock(void)
     }
 }
 
+#ifdef ORIGCODE
 typedef struct
 {
     int finished;
@@ -515,6 +517,14 @@ void OPL_Delay(uint64_t us)
     SDL_DestroyMutex(delay_data.mutex);
     SDL_DestroyCond(delay_data.cond);
 }
+#else
+// STM32: No-op delay (we don't use blocking delays in audio callback)
+void OPL_Delay(uint64_t us)
+{
+    // Not needed on STM32 - OPL callbacks processed synchronously
+    (void)us;
+}
+#endif
 
 void OPL_SetPaused(int paused)
 {
