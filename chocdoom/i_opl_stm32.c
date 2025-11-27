@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include "opl/opl.h"
 #include "opl/opl_internal.h"
+#include "opl/opl_timer.h"
 #include "opl/dbopl.h"
 
 /* DBOPL chip instance */
