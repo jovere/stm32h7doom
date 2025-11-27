@@ -65,6 +65,7 @@ int snd_sfxdevice = SNDDEVICE_SB;
 extern void I_InitTimidityConfig(void);
 extern sound_module_t sound_sdl_module;
 extern sound_module_t sound_pcsound_module;
+extern sound_module_t sound_stm32_module;  /* STM32 hardware audio */
 extern music_module_t music_sdl_module;
 extern music_module_t music_opl_module;
 
@@ -89,11 +90,14 @@ static int snd_mport = 0;
 
 // Compiled-in sound modules:
 
-static sound_module_t *sound_modules[] = 
+static sound_module_t *sound_modules[] =
 {
 #ifdef FEATURE_SOUND
+    &sound_stm32_module,  /* Use STM32 hardware audio backend */
+    /* SDL modules not available on embedded platform:
     &sound_sdl_module,
     &sound_pcsound_module,
+    */
 #endif
     NULL,
 };
@@ -103,8 +107,10 @@ static sound_module_t *sound_modules[] =
 static music_module_t *music_modules[] =
 {
 #ifdef FEATURE_SOUND
+    &music_opl_module,  /* Use OPL2 FM synthesis for music */
+    /* SDL module not available on embedded platform:
     &music_sdl_module,
-    &music_opl_module,
+    */
 #endif
     NULL,
 };
