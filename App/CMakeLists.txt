@@ -47,6 +47,7 @@ add_executable(stm32doom
     jpeg.c
     images.c
     inputoutput.c
+    audio_stm32.c
 
     # Startup code
     ${CMAKE_SOURCE_DIR}/startup_stm32h750xx.s
