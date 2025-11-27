@@ -14,6 +14,7 @@
 
 #include "opl_timer.h"
 #include "opl_queue.h"
+#include "stddef.h"
 
 // Current time in microseconds
 static uint64_t current_time = 0;
