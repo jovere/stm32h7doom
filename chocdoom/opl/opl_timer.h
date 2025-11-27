@@ -29,5 +29,9 @@ void OPL_Timer_Unlock(void);
 void OPL_Timer_SetPaused(int paused);
 void OPL_Timer_AdjustCallbacks(float factor);
 
+// STM32-specific: Advance timer and process callbacks
+// Call this before generating OPL samples
+void OPL_Timer_AdvanceTime(uint64_t us);
+
 #endif /* #ifndef OPL_TIMER_H */
 

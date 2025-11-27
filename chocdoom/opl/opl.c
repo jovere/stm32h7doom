@@ -20,13 +20,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef ORIGCODE
 #include "SDL.h"
+#endif
 
 #include "opl.h"
 #include "opl_internal.h"
 
 //#define OPL_DEBUG_TRACE
 
+#ifdef ORIGCODE
 #ifdef HAVE_IOPERM
 extern opl_driver_t opl_linux_driver;
 #endif
@@ -37,9 +40,14 @@ extern opl_driver_t opl_openbsd_driver;
 extern opl_driver_t opl_win32_driver;
 #endif
 extern opl_driver_t opl_sdl_driver;
+#endif
+
+/* STM32 driver */
+extern opl_driver_t opl_stm32_driver;
 
 static opl_driver_t *drivers[] =
 {
+#ifdef ORIGCODE
 #ifdef HAVE_IOPERM
     &opl_linux_driver,
 #endif
@@ -50,6 +58,9 @@ static opl_driver_t *drivers[] =
     &opl_win32_driver,
 #endif
     &opl_sdl_driver,
+#else
+    &opl_stm32_driver,  /* Use STM32 DBOPL driver */
+#endif
     NULL
 };
 
