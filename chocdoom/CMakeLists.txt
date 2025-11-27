@@ -103,6 +103,9 @@ set(DOOM_SOURCES
     i_oplmusic.c
     midifile.c
     mus2mid.c
+
+    # STM32 Sound Backend
+    i_sound_stm32.c
 )
 
 # Create Doom game engine static library
