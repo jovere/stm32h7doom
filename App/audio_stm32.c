@@ -33,9 +33,27 @@ static void Audio_DMA_Init(void);
 void HAL_SAI_MspInit(SAI_HandleTypeDef* hsai)
 {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
+    RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
 
     if (hsai->Instance == SAI2_Block_B)
     {
+        /* Configure SAI2 clock source (PLL3_Q at 49.15 MHz for 44.1 kHz) */
+        PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SAI2;
+        PeriphClkInitStruct.Sai23ClockSelection = RCC_SAI2CLKSOURCE_PLL3;
+        PeriphClkInitStruct.PLL3.PLL3M = 4;
+        PeriphClkInitStruct.PLL3.PLL3N = 129;
+        PeriphClkInitStruct.PLL3.PLL3P = 2;
+        PeriphClkInitStruct.PLL3.PLL3Q = 66;  /* 64 MHz / 66 * 129 / 4 ≈ 49.15 MHz */
+        PeriphClkInitStruct.PLL3.PLL3R = 2;
+        PeriphClkInitStruct.PLL3.PLL3RGE = RCC_PLL3VCIRANGE_1;
+        PeriphClkInitStruct.PLL3.PLL3VCOSEL = RCC_PLL3VCOWIDE;
+        PeriphClkInitStruct.PLL3.PLL3FRACN = 0;
+
+        if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
+        {
+            Error_Handler();
+        }
+
         /* Enable SAI2 clock */
         __HAL_RCC_SAI2_CLK_ENABLE();
 
