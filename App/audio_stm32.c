@@ -26,92 +26,6 @@ static void Audio_SAI_Init(void);
 static void Audio_DMA_Init(void);
 
 /**
- * @brief HAL SAI MSP Initialization callback
- *
- * Called by HAL_SAI_Init() to configure low-level resources.
- */
-void HAL_SAI_MspInit(SAI_HandleTypeDef* hsai)
-{
-    GPIO_InitTypeDef GPIO_InitStruct = {0};
-    RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
-
-    if (hsai->Instance == SAI2_Block_B)
-    {
-        /* Configure SAI2 clock source (PLL3_Q at 49.15 MHz for 44.1 kHz) */
-        PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SAI2;
-        PeriphClkInitStruct.Sai23ClockSelection = RCC_SAI2CLKSOURCE_PLL3;
-        PeriphClkInitStruct.PLL3.PLL3M = 4;
-        PeriphClkInitStruct.PLL3.PLL3N = 129;
-        PeriphClkInitStruct.PLL3.PLL3P = 2;
-        PeriphClkInitStruct.PLL3.PLL3Q = 66;  /* 64 MHz / 66 * 129 / 4 ≈ 49.15 MHz */
-        PeriphClkInitStruct.PLL3.PLL3R = 2;
-        PeriphClkInitStruct.PLL3.PLL3RGE = RCC_PLL3VCIRANGE_1;
-        PeriphClkInitStruct.PLL3.PLL3VCOSEL = RCC_PLL3VCOWIDE;
-        PeriphClkInitStruct.PLL3.PLL3FRACN = 0;
-
-        if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
-        {
-            Error_Handler();
-        }
-
-        /* Enable SAI2 clock */
-        __HAL_RCC_SAI2_CLK_ENABLE();
-
-        /* Enable GPIO clocks */
-        __HAL_RCC_GPIOA_CLK_ENABLE();
-        __HAL_RCC_GPIOG_CLK_ENABLE();
-
-        /* Configure GPIO pins for SAI2:
-         * PA0: SAI2_SD_B (Data Out)
-         * PA2: SAI2_SCK_B (Bit Clock)
-         * PG9: SAI2_FS_A (Frame Sync / LRCLK)
-         */
-
-        /* PA0: SAI2_SD_B */
-        GPIO_InitStruct.Pin = GPIO_PIN_0;
-        GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-        GPIO_InitStruct.Pull = GPIO_NOPULL;
-        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-        GPIO_InitStruct.Alternate = GPIO_AF10_SAI2;
-        HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-        /* PA2: SAI2_SCK_B */
-        GPIO_InitStruct.Pin = GPIO_PIN_2;
-        GPIO_InitStruct.Alternate = GPIO_AF10_SAI2;
-        HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-        /* PG9: SAI2_FS_A */
-        GPIO_InitStruct.Pin = GPIO_PIN_9;
-        GPIO_InitStruct.Alternate = GPIO_AF10_SAI2;
-        HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
-
-        /* Enable DMA1 clock */
-        __HAL_RCC_DMA1_CLK_ENABLE();
-
-        /* Configure DMA for SAI2_B */
-        hdma_sai2_b.Instance = DMA1_Stream4;
-        hdma_sai2_b.Init.Request = DMA_REQUEST_SAI2_B;
-        hdma_sai2_b.Init.Direction = DMA_MEMORY_TO_PERIPH;
-        hdma_sai2_b.Init.PeriphInc = DMA_PINC_DISABLE;
-        hdma_sai2_b.Init.MemInc = DMA_MINC_ENABLE;
-        hdma_sai2_b.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
-        hdma_sai2_b.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
-        hdma_sai2_b.Init.Mode = DMA_CIRCULAR;
-        hdma_sai2_b.Init.Priority = DMA_PRIORITY_HIGH;
-        hdma_sai2_b.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
-
-        HAL_DMA_Init(&hdma_sai2_b);
-
-        /* Link DMA to SAI */
-        __HAL_LINKDMA(hsai, hdmatx, hdma_sai2_b);
-
-        /* Configure DMA interrupt */
-        HAL_NVIC_SetPriority(DMA1_Stream4_IRQn, 5, 0);
-        HAL_NVIC_EnableIRQ(DMA1_Stream4_IRQn);
-    }
-}
-
-/**
  * @brief Initialize GPIO pins for SAI2
  */
 static void Audio_GPIO_Init(void)
@@ -219,7 +133,9 @@ static void Audio_DMA_Init(void)
  */
 void Audio_Init(void)
 {
-    /* Initialize SAI (MspInit callback handles GPIO and DMA) */
+    /* Initialize peripherals in order */
+    Audio_GPIO_Init();
+    Audio_DMA_Init();
     Audio_SAI_Init();
 
     /* Clear audio buffer */
