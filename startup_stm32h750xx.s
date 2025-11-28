@@ -39,6 +39,12 @@ defined in linker script */
 .word  _sdata
 /* end address for the .data section. defined in linker script */
 .word  _edata
+/* start address for the .rodata section. defined in linker script */
+.word  _sirodata
+/* end address for the .rodata section. defined in linker script */
+.word  _eirodata
+/* source address for the .rodata section. defined in linker script */
+.word  _sirodata_src
 /* start address for the .bss section. defined in linker script */
 .word  _sbss
 /* end address for the .bss section. defined in linker script */
@@ -81,6 +87,24 @@ LoopCopyDataInit:
   adds r4, r0, r3
   cmp r4, r1
   bcc CopyDataInit
+
+/* Copy the rodata segment from QSPI to SDRAM */
+  ldr r0, =_sirodata
+  ldr r1, =_eirodata
+  ldr r2, =_sirodata_src
+  movs r3, #0
+  b LoopCopyRodataInit
+
+CopyRodataInit:
+  ldr r4, [r2, r3]
+  str r4, [r0, r3]
+  adds r3, r3, #4
+
+LoopCopyRodataInit:
+  adds r4, r0, r3
+  cmp r4, r1
+  bcc CopyRodataInit
+
 /* Zero fill the bss segment. */
   ldr r2, =_sbss
   ldr r4, =_ebss

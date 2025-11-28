@@ -104,10 +104,14 @@ SECTIONS
   .rodata :
   {
     . = ALIGN(4);
+    _sirodata = .;
     *(.rodata)         /* .rodata sections (constants, strings, etc.) */
     *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
     . = ALIGN(4);
+    _eirodata = .;
   } >SDRAM AT>QSPI_APP
+
+  _sirodata_src = LOADADDR(.rodata);
 
   .ARM.extab (READONLY) : /* The "READONLY" keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
