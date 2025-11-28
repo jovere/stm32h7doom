@@ -272,12 +272,20 @@ void Audio_MixCallback(int16_t* buffer, int samples)
 }
 
 /**
+ * @brief Sound devices supported by STM32 module
+ */
+static snddevice_t sound_devices[] =
+{
+    SNDDEVICE_SB,  /* Generic Sound Blaster compatible (digital audio) */
+};
+
+/**
  * @brief STM32 sound module interface
  */
 sound_module_t sound_stm32_module =
 {
-    NULL,                           /* sound_devices */
-    0,                              /* num_sound_devices */
+    sound_devices,                  /* sound_devices */
+    arrlen(sound_devices),          /* num_sound_devices */
     I_STM32_InitSound,
     I_STM32_ShutdownSound,
     I_STM32_GetSfxLumpNum,
