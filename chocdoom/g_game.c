@@ -1175,7 +1175,7 @@ G_CheckSpot
                 ya = finesine[an];
                 break;
             default:
-                I_Error("G_CheckSpot: unexpected angle %d\n", an);
+               // I_Error("G_CheckSpot: unexpected angle %d\n", an);
                 xa = ya = 0;
                 break;
         }
