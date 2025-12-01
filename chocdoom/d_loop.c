@@ -40,6 +40,8 @@
 #include "net_lwip.h"
 #include "net_loop.h"
 
+#include "debug_console.h"
+
 // The complete set of data for a particular tic.
 
 typedef struct
@@ -535,6 +537,11 @@ boolean D_InitNetGame(net_connect_data_t *connect_data)
 
         result = true;
     }
+
+    DebugConsole_Clear();
+    DebugConsole_Draw();
+    DebugConsole_Draw();
+
 #endif
 
     return result;

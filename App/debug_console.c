@@ -122,7 +122,7 @@ static gfx_image_t console_image;
 #define CHAR_WIDTH  8
 #define CHAR_HEIGHT 8
 #define LINE_SPACING 2
-#define MARGIN_X 80
+#define MARGIN_X 0
 #define MARGIN_Y 10
 
 void DebugConsole_Init(void)

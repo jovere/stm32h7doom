@@ -28,7 +28,6 @@
 #include "ethernetif.h"
 
 /* USER CODE BEGIN 0 */
-#include "unique_id.h"
 #include "inputoutput.h"
 /* USER CODE END 0 */
 /* Private function prototypes -----------------------------------------------*/
@@ -58,13 +57,13 @@ uint8_t GATEWAY_ADDRESS[4];
 /**
   * LwIP initialization function
   */
-void MX_LWIP_Init(void)
+void MX_LWIP_Init(uint8_t last_octet)
 {
   /* IP addresses initialization */
   IP_ADDRESS[0] = 192;
   IP_ADDRESS[1] = 168;
   IP_ADDRESS[2] = 0;
-  IP_ADDRESS[3] = 10;
+  IP_ADDRESS[3] = last_octet;
   NETMASK_ADDRESS[0] = 255;
   NETMASK_ADDRESS[1] = 255;
   NETMASK_ADDRESS[2] = 255;
@@ -75,18 +74,6 @@ void MX_LWIP_Init(void)
   GATEWAY_ADDRESS[3] = 0;
 
 /* USER CODE BEGIN IP_ADDRESSES */
-  // Wait for button matrix to settle, then read button state
-  // (Button matrix is updated by interrupt, no need to call buttonMatrixScan)
-  HAL_Delay(100);
-  uint16_t buttons = getButtonMatrix();
-  network_server_mode = (buttons & (BUTTON_T5|BUTTON_T4)) ? true : false;
-
-  // Use unique ID for IP address (unless server mode)
-  // Server always uses .10, clients use unique ID-based address
-  if (!network_server_mode)
-  {
-    IP_ADDRESS[3] = GetUniqueIPLastOctet();
-  }
 /* USER CODE END IP_ADDRESSES */
 
   /* Initialize the LwIP stack without RTOS */

@@ -14,7 +14,7 @@
 
 // Maximum number of lines to display
 #define DEBUG_CONSOLE_MAX_LINES  20
-#define DEBUG_CONSOLE_LINE_LENGTH 80
+#define DEBUG_CONSOLE_LINE_LENGTH 101 // Need null
 
 // Initialize the debug console
 void DebugConsole_Init(void);

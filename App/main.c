@@ -32,6 +32,8 @@
 #include "lcd.h"
 #include "ksz8863.h"
 #include "inputoutput.h"
+#include "debug_console.h"
+#include "unique_id.h"
 
 // Doom command line arguments (avoid including m_argv.h due to type conflicts)
 extern int myargc;
@@ -111,11 +113,9 @@ void DWT_Init(void)
 //   F11 (bit 1): Start as server
 //   '1' (bit 2): Join as client
 //
-static void ConfigureNetworkMode(void)
+static uint8_t ConfigureNetworkMode(void)
 {
     uint16_t buttons;
-    extern struct netif gnetif;
-    char ip_str[16];
 
     // Initialize argv array
     myargv = argv_storage;
@@ -125,67 +125,75 @@ static void ConfigureNetworkMode(void)
     // Wait a moment for buttons to settle
     HAL_Delay(100);
 
-    // Read button state
-    buttonMatrixScan();
-    HAL_Delay(10);
-    buttonMatrixScan();
-    buttons = getButtonMatrix();
+    DebugConsole_Init();
+    //DPRINT("0         1         2         3         4         5         6         7         8         9");
+    //DPRINT("0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789");
+    //DPRINT("  (          )         (          )         (          )         (          )        (          )");
+    DPRINT("     SINGLE            MULTIPLAYER                                  CO-OP             DEATHMATCH\n");
+    DPRINT("     PLAYER               CLIENT                                    SERVER              SERVER\n");
+    DPRINT("\n");
+    DPRINT("\n");
+    DPRINT("\n");
+    DPRINT("                                           CHOOSE GAME MODE\n");
+    DebugConsole_Draw();
 
-    // Get our IP address for display
-    snprintf(ip_str, sizeof(ip_str), "%s", ip4addr_ntoa(netif_ip4_addr(&gnetif)));
+    // Wait for button press
+    while (((buttons = getButtonMatrix()) & (BUTTON_T1 | BUTTON_T2 | BUTTON_T4 | BUTTON_T5)) == 0){}
 
+    uint8_t last_octet = GetUniqueIPLastOctet();
     if (buttons & BUTTON_T4) {
-        printf("=================================\n");
-        printf("  DOOM COOPERATIVE - SERVER MODE\n");
-        printf("  IP Address: %s\n", ip_str);
-        printf("  Port: 2342\n");
-        printf("=================================\n");
+        last_octet = 10;
+        DPRINT("=================================\n");
+        DPRINT("  DOOM COOPERATIVE - SERVER MODE\n");
+        DPRINT("  IP Address: 192.168.0.%u\n", last_octet);
+        DPRINT("  Port: 2342\n");
+        DPRINT("=================================\n");
         myargv[myargc] = "-server";
-        printf("DEBUG: Set myargv[%d] = '%s'\n", myargc, myargv[myargc]);
+        DPRINT("DEBUG: Set myargv[%d] = '%s'\n", myargc, myargv[myargc]);
         myargc++;
     } else if (buttons & BUTTON_T5) {
-        printf("=================================\n");
-        printf("  DOOM DEATHMATCH - SERVER MODE\n");
-        printf("  IP Address: %s\n", ip_str);
-        printf("  Port: 2342\n");
-        printf("=================================\n");
+        last_octet = 10;
+        DPRINT("=================================\n");
+        DPRINT("  DOOM DEATHMATCH - SERVER MODE\n");
+        DPRINT("  IP Address: 192.168.0.%u\n", last_octet);
+        DPRINT("  Port: 2342\n");
+        DPRINT("=================================\n");
         myargv[myargc] = "-server";
-        printf("DEBUG: Set myargv[%d] = '%s'\n", myargc, myargv[myargc]);
+        DPRINT("DEBUG: Set myargv[%d] = '%s'\n", myargc, myargv[myargc]);
         myargc++;
         myargv[myargc] = "-altdeath";
-        printf("DEBUG: Set myargv[%d] = '%s'\n", myargc, myargv[myargc]);
+        DPRINT("DEBUG: Set myargv[%d] = '%s'\n", myargc, myargv[myargc]);
         myargc++;
         myargv[myargc] = "-nomonsters";
-        printf("DEBUG: Set myargv[%d] = '%s'\n", myargc, myargv[myargc]);
+        DPRINT("DEBUG: Set myargv[%d] = '%s'\n", myargc, myargv[myargc]);
         myargc++;
-    } else if (buttons & BUTTON_1) {
+    } else if (buttons & BUTTON_T2) {
         // TODO: Make server IP configurable via config file
         static char server_arg[20] = "192.168.0.10";
 
-        printf("=================================\n");
-        printf("  DOOM MULTIPLAYER - CLIENT MODE\n");
-        printf("  Our IP: %s\n", ip_str);
-        printf("  Connecting to: %s:2342\n", server_arg);
-        printf("=================================\n");
+        DPRINT("=================================\n");
+        DPRINT("  DOOM MULTIPLAYER - CLIENT MODE\n");
+        DPRINT("  Our IP: 192.168.0.%u\n", last_octet);
+        DPRINT("  Connecting to: %s:2342\n", server_arg);
+        DPRINT("=================================\n");
         myargv[myargc] = "-connect";
-        printf("DEBUG: Set myargv[%d] = '%s'\n", myargc, myargv[myargc]);
+        DPRINT("DEBUG: Set myargv[%d] = '%s'\n", myargc, myargv[myargc]);
         myargc++;
         myargv[myargc] = server_arg;
-        printf("DEBUG: Set myargv[%d] = '%s'\n", myargc, myargv[myargc]);
+        DPRINT("DEBUG: Set myargv[%d] = '%s'\n", myargc, myargv[myargc]);
+        DPRINT("\n");
+        DPRINT("WAITING FOR SERVER\n");
         myargc++;
 
     } else {
         // No button held - SINGLE PLAYER
-        printf("=================================\n");
-        printf("  DOOM - SINGLE PLAYER MODE\n");
-        printf("=================================\n");
+        DPRINT("=================================\n");
+        DPRINT("  DOOM - SINGLE PLAYER MODE\n");
+        DPRINT("=================================\n");
     }
 
-    // Debug: print all arguments
-    printf("DEBUG: Total arguments = %d\n", myargc);
-    for (int i = 0; i < myargc; i++) {
-        printf("  myargv[%d] = '%s'\n", i, myargv[i]);
-    }
+    DebugConsole_Draw();
+    return last_octet;
 }
 
 /*
@@ -278,7 +286,6 @@ int main(void)
   MX_TIM4_Init();
   MX_FATFS_Init();
   MX_DMA2D_Init();
-  MX_LWIP_Init();
   /* USER CODE BEGIN 2 */
     ITM_Init();
 
@@ -297,7 +304,7 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
     // Configure network mode based on startup button
-    ConfigureNetworkMode();
+    MX_LWIP_Init(ConfigureNetworkMode());
 
     D_DoomMain();
   while (1)
