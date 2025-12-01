@@ -5,9 +5,8 @@
   ******************************************************************************
   */
 
+#include "main.h"
 #include "audio_stm32.h"
-#include "stm32h7xx_hal.h"
-#include "stm32h7xx_ll_rcc.h"
 #include <string.h>
 #include <math.h>
 
