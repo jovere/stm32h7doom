@@ -564,7 +564,7 @@ void NET_SafePuts(char *s)
 
     for (p=s; *p; ++p)
     {
-        if (isprint(*p) || *p == '\n')
+        if (isprint((uint8_t)*p) || *p == '\n')
             putchar(*p);
     }
 

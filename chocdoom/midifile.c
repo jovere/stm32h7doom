@@ -548,7 +548,7 @@ static boolean ReadFileHeader(midi_file_t *file, FILE *stream)
      || SDL_SwapBE32(file->header.chunk_header.chunk_size) != 6)
     {
         fprintf(stderr, "ReadFileHeader: Invalid MIDI chunk header! "
-                        "chunk_size=%i\n",
+                        "chunk_size=%lu\n",
                         SDL_SwapBE32(file->header.chunk_header.chunk_size));
         return false;
     }
