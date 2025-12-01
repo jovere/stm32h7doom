@@ -92,7 +92,7 @@ static void I_STM32_ShutdownSound(void)
  */
 static int I_STM32_GetSfxLumpNum(sfxinfo_t *sfxinfo)
 {
-    char namebuf[9];
+    char namebuf[11];
 
     /* Construct sound lump name */
     sprintf(namebuf, "ds%s", sfxinfo->name);
