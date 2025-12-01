@@ -7,6 +7,7 @@
 
 #include "audio_stm32.h"
 #include "stm32h7xx_hal.h"
+#include "stm32h7xx_ll_rcc.h"
 #include <string.h>
 #include <math.h>
 
@@ -40,16 +41,16 @@ static void Audio_GPIO_Init(void)
     GPIO_InitStruct.Pin = GPIO_PIN_0;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     GPIO_InitStruct.Alternate = GPIO_AF10_SAI2;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
     /* Configure PA2: SAI2_SCK_B (Bit Clock) */
     GPIO_InitStruct.Pin = GPIO_PIN_2;
-    GPIO_InitStruct.Alternate = GPIO_AF10_SAI2;
+    GPIO_InitStruct.Alternate = GPIO_AF8_SAI2;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-    /* Configure PG9: SAI2_FS_A (Frame Sync / Word Select) */
+    /* Configure PG9: SAI2_FS_B (Frame Sync / Word Select) */
     GPIO_InitStruct.Pin = GPIO_PIN_9;
     GPIO_InitStruct.Alternate = GPIO_AF10_SAI2;
     HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
@@ -61,6 +62,7 @@ static void Audio_GPIO_Init(void)
 static void Audio_SAI_Init(void)
 {
     /* Enable SAI2 clock */
+    LL_RCC_SetSAIClockSource(LL_RCC_SAI23_CLKSOURCE_PLL2P);
     __HAL_RCC_SAI2_CLK_ENABLE();
 
     /* Configure SAI2 Block B as I2S master transmitter */
@@ -69,27 +71,15 @@ static void Audio_SAI_Init(void)
     hsai2.Init.Synchro = SAI_ASYNCHRONOUS;
     hsai2.Init.OutputDrive = SAI_OUTPUTDRIVE_ENABLE;
     hsai2.Init.NoDivider = SAI_MASTERDIVIDER_ENABLE;
+    hsai2.Init.MckOverSampling = SAI_MCK_OVERSAMPLING_DISABLE;
     hsai2.Init.FIFOThreshold = SAI_FIFOTHRESHOLD_1QF;
-    hsai2.Init.AudioFrequency = AUDIO_SAMPLE_RATE;
-    hsai2.Init.Protocol = SAI_FREE_PROTOCOL;
-    hsai2.Init.DataSize = SAI_DATASIZE_16;
-    hsai2.Init.FirstBit = SAI_FIRSTBIT_MSB;
-    hsai2.Init.ClockStrobing = SAI_CLOCKSTROBING_FALLINGEDGE;
+    hsai2.Init.AudioFrequency = SAI_AUDIO_FREQUENCY_44K;
+    hsai2.Init.SynchroExt = SAI_SYNCEXT_DISABLE;
+    hsai2.Init.MonoStereoMode = SAI_STEREOMODE;
+    hsai2.Init.CompandingMode = SAI_NOCOMPANDING;
+    hsai2.Init.TriState = SAI_OUTPUT_NOTRELEASED;
 
-    /* I2S frame configuration */
-    hsai2.FrameInit.FrameLength = 64;  /* 32 bits per channel × 2 channels */
-    hsai2.FrameInit.ActiveFrameLength = 32;
-    hsai2.FrameInit.FSDefinition = SAI_FS_CHANNEL_IDENTIFICATION;
-    hsai2.FrameInit.FSPolarity = SAI_FS_ACTIVE_LOW;
-    hsai2.FrameInit.FSOffset = SAI_FS_BEFOREFIRSTBIT;
-
-    /* Slot configuration (stereo) */
-    hsai2.SlotInit.FirstBitOffset = 0;
-    hsai2.SlotInit.SlotSize = SAI_SLOTSIZE_16B;
-    hsai2.SlotInit.SlotNumber = 2;  /* 2 slots for stereo */
-    hsai2.SlotInit.SlotActive = SAI_SLOTACTIVE_0 | SAI_SLOTACTIVE_1;
-
-    if (HAL_SAI_Init(&hsai2) != HAL_OK)
+    if (HAL_SAI_InitProtocol(&hsai2, SAI_I2S_STANDARD, SAI_PROTOCOL_DATASIZE_16BIT, 2) != HAL_OK)
     {
         Error_Handler();
     }
@@ -109,8 +99,8 @@ static void Audio_DMA_Init(void)
     hdma_sai2_b.Init.Direction = DMA_MEMORY_TO_PERIPH;
     hdma_sai2_b.Init.PeriphInc = DMA_PINC_DISABLE;
     hdma_sai2_b.Init.MemInc = DMA_MINC_ENABLE;
-    hdma_sai2_b.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
-    hdma_sai2_b.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
+    hdma_sai2_b.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
+    hdma_sai2_b.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
     hdma_sai2_b.Init.Mode = DMA_CIRCULAR;
     hdma_sai2_b.Init.Priority = DMA_PRIORITY_HIGH;
     hdma_sai2_b.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
@@ -122,9 +112,10 @@ static void Audio_DMA_Init(void)
 
     /* Link DMA handle to SAI */
     __HAL_LINKDMA(&hsai2, hdmatx, hdma_sai2_b);
+    __HAL_LINKDMA(&hsai2, hdmarx, hdma_sai2_b);
 
     /* Configure DMA interrupt */
-    HAL_NVIC_SetPriority(DMA1_Stream4_IRQn, 5, 0);
+    HAL_NVIC_SetPriority(DMA1_Stream4_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(DMA1_Stream4_IRQn);
 }
 

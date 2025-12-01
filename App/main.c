@@ -388,6 +388,23 @@ void SystemClock_Config(void)
   */
 void PeriphCommonClock_Config(void)
 {
+  LL_RCC_PLL2P_Enable();
+  LL_RCC_PLL2_SetVCOInputRange(LL_RCC_PLLINPUTRANGE_1_2);
+  LL_RCC_PLL2_SetVCOOutputRange(LL_RCC_PLLVCORANGE_WIDE);
+  LL_RCC_PLL2_SetM(25);
+  LL_RCC_PLL2_SetN(270);
+  LL_RCC_PLL2_SetP(3);
+  LL_RCC_PLL2_SetQ(2);
+  LL_RCC_PLL2_SetR(2);
+  LL_RCC_PLL2_SetFRACN(7786);
+  LL_RCC_PLL2FRACN_Enable();
+  LL_RCC_PLL2_Enable();
+
+  /* Wait till PLL is ready */
+  while(LL_RCC_PLL2_IsReady() != 1)
+  {
+  }
+
   LL_RCC_PLL3R_Enable();
   LL_RCC_PLL3_SetVCOInputRange(LL_RCC_PLLINPUTRANGE_8_16);
   LL_RCC_PLL3_SetVCOOutputRange(LL_RCC_PLLVCORANGE_MEDIUM);
