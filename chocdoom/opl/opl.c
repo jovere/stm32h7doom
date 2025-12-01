@@ -30,7 +30,6 @@
 
 //#define OPL_DEBUG_TRACE
 
-#ifdef ORIGCODE
 #ifdef HAVE_IOPERM
 extern opl_driver_t opl_linux_driver;
 #endif
@@ -40,15 +39,15 @@ extern opl_driver_t opl_openbsd_driver;
 #ifdef _WIN32
 extern opl_driver_t opl_win32_driver;
 #endif
+#ifdef STM32H750xx
+extern opl_driver_t opl_stm32_driver;
+#endif
+#if ORIGCODE
 extern opl_driver_t opl_sdl_driver;
 #endif
 
-/* STM32 driver */
-extern opl_driver_t opl_stm32_driver;
-
 static opl_driver_t *drivers[] =
 {
-#ifdef ORIGCODE
 #ifdef HAVE_IOPERM
     &opl_linux_driver,
 #endif
@@ -58,9 +57,11 @@ static opl_driver_t *drivers[] =
 #ifdef _WIN32
     &opl_win32_driver,
 #endif
-    &opl_sdl_driver,
-#else
+#ifdef STM32H750xx
     &opl_stm32_driver,  /* Use STM32 DBOPL driver */
+#endif
+#ifdef ORIGCODE
+    &opl_sdl_driver,
 #endif
     NULL
 };
@@ -462,7 +463,14 @@ void OPL_Unlock(void)
     }
 }
 
-#ifdef ORIGCODE
+#ifdef STM32H750xx
+// STM32: No-op delay (we don't use blocking delays in audio callback)
+void OPL_Delay(uint64_t us)
+{
+    // Not needed on STM32 - OPL callbacks processed synchronously
+    (void)us;
+}
+#else
 typedef struct
 {
     int finished;
@@ -516,13 +524,6 @@ void OPL_Delay(uint64_t us)
 
     SDL_DestroyMutex(delay_data.mutex);
     SDL_DestroyCond(delay_data.cond);
-}
-#else
-// STM32: No-op delay (we don't use blocking delays in audio callback)
-void OPL_Delay(uint64_t us)
-{
-    // Not needed on STM32 - OPL callbacks processed synchronously
-    (void)us;
 }
 #endif
 
