@@ -11,14 +11,15 @@
 #include <math.h>
 
 /* Private defines */
-#define AUDIO_DMA_BUFFER_SIZE   (AUDIO_BUFFER_SIZE * AUDIO_CHANNELS * 2)  /* Double buffer */
+#define AUDIO_DMA_HALF_BUFFER_SIZE   (AUDIO_BUFFER_SIZE * AUDIO_CHANNELS)  /* Double buffer */
+#define AUDIO_DMA_BUFFER_SIZE         (AUDIO_DMA_HALF_BUFFER_SIZE * 2)
 
 /* Private variables */
 static SAI_HandleTypeDef hsai2;
 static DMA_HandleTypeDef hdma_sai2_b;
 
 /* DMA audio buffer in SDRAM (interleaved stereo: L,R,L,R...) */
-static int16_t audio_buffer[AUDIO_DMA_BUFFER_SIZE] __attribute__((section(".sdram")));
+static int16_t audio_buffer[2][AUDIO_DMA_HALF_BUFFER_SIZE] __attribute__((section(".sdram"))) __aligned(32);
 
 /* Forward declarations */
 static void Audio_GPIO_Init(void);
@@ -71,7 +72,7 @@ static void Audio_SAI_Init(void)
     hsai2.Init.OutputDrive = SAI_OUTPUTDRIVE_ENABLE;
     hsai2.Init.NoDivider = SAI_MASTERDIVIDER_ENABLE;
     hsai2.Init.MckOverSampling = SAI_MCK_OVERSAMPLING_DISABLE;
-    hsai2.Init.FIFOThreshold = SAI_FIFOTHRESHOLD_1QF;
+    hsai2.Init.FIFOThreshold = SAI_FIFOTHRESHOLD_HF;
     hsai2.Init.AudioFrequency = SAI_AUDIO_FREQUENCY_44K;
     hsai2.Init.SynchroExt = SAI_SYNCEXT_DISABLE;
     hsai2.Init.MonoStereoMode = SAI_STEREOMODE;
@@ -98,7 +99,7 @@ static void Audio_DMA_Init(void)
     hdma_sai2_b.Init.Direction = DMA_MEMORY_TO_PERIPH;
     hdma_sai2_b.Init.PeriphInc = DMA_PINC_DISABLE;
     hdma_sai2_b.Init.MemInc = DMA_MINC_ENABLE;
-    hdma_sai2_b.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
+    hdma_sai2_b.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
     hdma_sai2_b.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
     hdma_sai2_b.Init.Mode = DMA_CIRCULAR;
     hdma_sai2_b.Init.Priority = DMA_PRIORITY_HIGH;
@@ -138,6 +139,7 @@ void Audio_Init(void)
 void Audio_Start(void)
 {
     /* Start DMA transmission in circular mode */
+    SCB_CleanDCache_by_Addr((uint32_t*)audio_buffer[0], sizeof(audio_buffer[0]));
     HAL_SAI_Transmit_DMA(&hsai2, (uint8_t*)audio_buffer, AUDIO_DMA_BUFFER_SIZE);
 }
 
@@ -160,7 +162,8 @@ void HAL_SAI_TxHalfCpltCallback(SAI_HandleTypeDef *hsai)
     if (hsai->Instance == SAI2_Block_B)
     {
         /* Fill first half of buffer (samples 0 to AUDIO_BUFFER_SIZE-1) */
-        Audio_MixCallback(&audio_buffer[0], AUDIO_BUFFER_SIZE);
+        Audio_MixCallback(audio_buffer[0], AUDIO_BUFFER_SIZE);
+        SCB_CleanDCache_by_Addr((uint32_t*)audio_buffer[0], sizeof(audio_buffer[0]));
     }
 }
 
@@ -175,7 +178,8 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
     if (hsai->Instance == SAI2_Block_B)
     {
         /* Fill second half of buffer (samples AUDIO_BUFFER_SIZE to end) */
-        Audio_MixCallback(&audio_buffer[AUDIO_BUFFER_SIZE * AUDIO_CHANNELS], AUDIO_BUFFER_SIZE);
+        Audio_MixCallback(audio_buffer[1], AUDIO_BUFFER_SIZE);
+        SCB_CleanDCache_by_Addr((uint32_t*)audio_buffer[1], sizeof(audio_buffer[1]));
     }
 }
 
