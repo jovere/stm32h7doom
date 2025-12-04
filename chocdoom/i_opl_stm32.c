@@ -57,6 +57,10 @@ static void OPL_STM32_Shutdown(void)
 /**
  * @brief Write to OPL port
  */
+/* Timer state for status register emulation */
+static int timer_started = 0;
+static int read_count_since_start = 0;
+
 static void OPL_STM32_WritePort(opl_port_t port, unsigned int value)
 {
     unsigned int reg;
@@ -96,6 +100,21 @@ static void OPL_STM32_WritePort(opl_port_t port, unsigned int value)
                 opl3_mode = (value & 0x01) ? 1 : 0;
             }
 
+            /* Track timer control register writes for status emulation */
+            if (reg == 0x04)  /* Timer control register */
+            {
+                if (value == 0x21)  /* Timer 1 start */
+                {
+                    timer_started = 1;
+                    read_count_since_start = 0;
+                }
+                else if (value == 0x60)  /* Timer reset */
+                {
+                    timer_started = 0;
+                    read_count_since_start = 0;
+                }
+            }
+
             /* Write to DBOPL chip */
             Chip__WriteReg(&opl_chip, reg, value);
             break;
@@ -107,8 +126,23 @@ static void OPL_STM32_WritePort(opl_port_t port, unsigned int value)
  */
 static unsigned int OPL_STM32_ReadPort(opl_port_t port)
 {
-    /* OPL status register - return "ready" status */
-    return 0x00;
+    /* Software emulation: fake status register for detection
+     * Track timer control register writes (0x21 = start, 0x60 = reset)
+     * Return timer status bits after timer has been running for a while
+     */
+
+    if (timer_started)
+    {
+        read_count_since_start++;
+
+        /* After ~200 reads following timer start, return "timer expired" status */
+        if (read_count_since_start > 200)
+        {
+            return 0xc0;  /* Bits 7,6 set = timer 1 and 2 expired */
+        }
+    }
+
+    return 0x00;  /* Timers not started or not expired yet */
 }
 
 /**
