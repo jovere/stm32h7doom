@@ -32,7 +32,7 @@ extern "C" {
 
 /* Audio configuration */
 #define AUDIO_SAMPLE_RATE       44100   /* Hz */
-#define AUDIO_BUFFER_SIZE       2048    /* Samples per half-buffer (stereo) */
+#define AUDIO_BUFFER_SIZE       16      /* Samples per half-buffer (stereo) */
 #define AUDIO_CHANNELS          2       /* Stereo */
 
 /**

@@ -60,6 +60,7 @@ add_executable(stm32doom
     ${CMAKE_SOURCE_DIR}/LWIP/Target/ksz8863.c
 
     # QSPI filesystem object (generated in root CMakeLists.txt)
+    # temporarily remove to make loading faster (if not changing the wad file)
     ${QSPI_FS_OBJ}
 )
 
