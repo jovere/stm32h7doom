@@ -115,7 +115,7 @@ static void Audio_DMA_Init(void)
     __HAL_LINKDMA(&hsai2, hdmarx, hdma_sai2_b);
 
     /* Configure DMA interrupt */
-    HAL_NVIC_SetPriority(DMA1_Stream4_IRQn, 0, 0);
+    HAL_NVIC_SetPriority(DMA1_Stream4_IRQn, 8, 0);
     HAL_NVIC_EnableIRQ(DMA1_Stream4_IRQn);
 }
 
