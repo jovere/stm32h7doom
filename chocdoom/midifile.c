@@ -23,6 +23,7 @@
 #include "doomtype.h"
 #include "i_swap.h"
 #include "midifile.h"
+#include "memio.h"
 
 #define HEADER_CHUNK_ID "MThd"
 #define TRACK_CHUNK_ID  "MTrk"
@@ -631,6 +632,428 @@ midi_file_t *MIDI_LoadFile(char *filename)
     }
 
     fclose(stream);
+
+    return file;
+}
+
+// Memory-based parsing functions using MEMFILE
+
+static boolean ReadByteMem(byte *result, MEMFILE *stream)
+{
+    int c;
+
+    c = mem_fgetc(stream);
+
+    if (c == -1)
+    {
+        fprintf(stderr, "ReadByteMem: Unexpected end of data\n");
+        return false;
+    }
+    else
+    {
+        *result = (byte) c;
+        return true;
+    }
+}
+
+static boolean ReadVariableLengthMem(unsigned int *result, MEMFILE *stream)
+{
+    int i;
+    byte b = 0;
+
+    *result = 0;
+
+    for (i=0; i<4; ++i)
+    {
+        if (!ReadByteMem(&b, stream))
+        {
+            fprintf(stderr, "ReadVariableLengthMem: Error while reading "
+                            "variable-length value\n");
+            return false;
+        }
+
+        *result <<= 7;
+        *result |= b & 0x7f;
+
+        if ((b & 0x80) == 0)
+        {
+            return true;
+        }
+    }
+
+    fprintf(stderr, "ReadVariableLengthMem: Variable-length value too "
+                    "long: maximum of four bytes\n");
+    return false;
+}
+
+static void *ReadByteSequenceMem(unsigned int num_bytes, MEMFILE *stream)
+{
+    unsigned int i;
+    byte *result;
+
+    result = malloc(num_bytes + 1);
+
+    if (result == NULL)
+    {
+        fprintf(stderr, "ReadByteSequenceMem: Failed to allocate buffer\n");
+        return NULL;
+    }
+
+    for (i=0; i<num_bytes; ++i)
+    {
+        if (!ReadByteMem(&result[i], stream))
+        {
+            fprintf(stderr, "ReadByteSequenceMem: Error while reading byte %u\n",
+                            i);
+            free(result);
+            return NULL;
+        }
+    }
+
+    return result;
+}
+
+static boolean ReadChannelEventMem(midi_event_t *event,
+                                   byte event_type, boolean two_param,
+                                   MEMFILE *stream)
+{
+    byte b = 0;
+
+    event->event_type = event_type & 0xf0;
+    event->data.channel.channel = event_type & 0x0f;
+
+    if (!ReadByteMem(&b, stream))
+    {
+        fprintf(stderr, "ReadChannelEventMem: Error while reading channel "
+                        "event parameters\n");
+        return false;
+    }
+
+    event->data.channel.param1 = b;
+
+    if (two_param)
+    {
+        if (!ReadByteMem(&b, stream))
+        {
+            fprintf(stderr, "ReadChannelEventMem: Error while reading channel "
+                            "event parameters\n");
+            return false;
+        }
+
+        event->data.channel.param2 = b;
+    }
+
+    return true;
+}
+
+static boolean ReadSysExEventMem(midi_event_t *event, int event_type,
+                                 MEMFILE *stream)
+{
+    event->event_type = event_type;
+
+    if (!ReadVariableLengthMem(&event->data.sysex.length, stream))
+    {
+        fprintf(stderr, "ReadSysExEventMem: Failed to read length of "
+                                        "SysEx block\n");
+        return false;
+    }
+
+    event->data.sysex.data = ReadByteSequenceMem(event->data.sysex.length, stream);
+
+    if (event->data.sysex.data == NULL)
+    {
+        fprintf(stderr, "ReadSysExEventMem: Failed while reading SysEx event\n");
+        return false;
+    }
+
+    return true;
+}
+
+static boolean ReadMetaEventMem(midi_event_t *event, MEMFILE *stream)
+{
+    byte b = 0;
+
+    event->event_type = MIDI_EVENT_META;
+
+    if (!ReadByteMem(&b, stream))
+    {
+        fprintf(stderr, "ReadMetaEventMem: Failed to read meta event type\n");
+        return false;
+    }
+
+    event->data.meta.type = b;
+
+    if (!ReadVariableLengthMem(&event->data.meta.length, stream))
+    {
+        fprintf(stderr, "ReadMetaEventMem: Failed to read length of "
+                                        "meta block\n");
+        return false;
+    }
+
+    event->data.meta.data = ReadByteSequenceMem(event->data.meta.length, stream);
+
+    if (event->data.meta.data == NULL)
+    {
+        fprintf(stderr, "ReadMetaEventMem: Failed while reading meta event\n");
+        return false;
+    }
+
+    return true;
+}
+
+static boolean ReadEventMem(midi_event_t *event, unsigned int *last_event_type,
+                            MEMFILE *stream)
+{
+    byte event_type = 0;
+
+    if (!ReadVariableLengthMem(&event->delta_time, stream))
+    {
+        fprintf(stderr, "ReadEventMem: Failed to read event timestamp\n");
+        return false;
+    }
+
+    if (!ReadByteMem(&event_type, stream))
+    {
+        fprintf(stderr, "ReadEventMem: Failed to read event type\n");
+        return false;
+    }
+
+    // All event types have their top bit set.  Therefore, if
+    // the top bit is not set, it is because we are using the "same
+    // as previous event type" shortcut to save a byte.  Skip back
+    // a byte so that we read this byte again.
+
+    if ((event_type & 0x80) == 0)
+    {
+        event_type = *last_event_type;
+
+        if (mem_fseek(stream, -1, MEM_SEEK_CUR) < 0)
+        {
+            fprintf(stderr, "ReadEventMem: Unable to seek in stream\n");
+            return false;
+        }
+    }
+    else
+    {
+        *last_event_type = event_type;
+    }
+
+    // Check event type:
+
+    switch (event_type & 0xf0)
+    {
+        // Two parameter channel events:
+
+        case MIDI_EVENT_NOTE_OFF:
+        case MIDI_EVENT_NOTE_ON:
+        case MIDI_EVENT_AFTERTOUCH:
+        case MIDI_EVENT_CONTROLLER:
+        case MIDI_EVENT_PITCH_BEND:
+            return ReadChannelEventMem(event, event_type, true, stream);
+
+        // Single parameter channel events:
+
+        case MIDI_EVENT_PROGRAM_CHANGE:
+        case MIDI_EVENT_CHAN_AFTERTOUCH:
+            return ReadChannelEventMem(event, event_type, false, stream);
+
+        default:
+            break;
+    }
+
+    // Specific value?
+
+    switch (event_type)
+    {
+        case MIDI_EVENT_SYSEX:
+        case MIDI_EVENT_SYSEX_SPLIT:
+            return ReadSysExEventMem(event, event_type, stream);
+
+        case MIDI_EVENT_META:
+            return ReadMetaEventMem(event, stream);
+
+        default:
+            break;
+    }
+
+    fprintf(stderr, "ReadEventMem: Unknown MIDI event type: 0x%x\n", event_type);
+    return false;
+}
+
+static boolean ReadTrackHeaderMem(midi_track_t *track, MEMFILE *stream)
+{
+    size_t records_read;
+    chunk_header_t chunk_header;
+
+    records_read = mem_fread(&chunk_header, sizeof(chunk_header_t), 1, stream);
+
+    if (records_read < 1)
+    {
+        return false;
+    }
+
+    if (!CheckChunkHeader(&chunk_header, TRACK_CHUNK_ID))
+    {
+        return false;
+    }
+
+    track->data_len = SDL_SwapBE32(chunk_header.chunk_size);
+
+    return true;
+}
+
+static boolean ReadTrackMem(midi_track_t *track, MEMFILE *stream)
+{
+    midi_event_t *new_events;
+    midi_event_t *event;
+    unsigned int last_event_type;
+    unsigned int allocated_events = 0;
+
+    track->num_events = 0;
+    track->events = NULL;
+
+    if (!ReadTrackHeaderMem(track, stream))
+    {
+        return false;
+    }
+
+    last_event_type = 0;
+
+    for (;;)
+    {
+        // Allocate in chunks to reduce realloc overhead
+        if (track->num_events >= allocated_events)
+        {
+            allocated_events = allocated_events == 0 ? 128 : allocated_events * 2;
+            new_events = realloc(track->events,
+                                 sizeof(midi_event_t) * allocated_events);
+
+            if (new_events == NULL)
+            {
+                return false;
+            }
+
+            track->events = new_events;
+        }
+
+        event = &track->events[track->num_events];
+        if (!ReadEventMem(event, &last_event_type, stream))
+        {
+            return false;
+        }
+
+        ++track->num_events;
+
+        if (event->event_type == MIDI_EVENT_META
+         && event->data.meta.type == MIDI_META_END_OF_TRACK)
+        {
+            break;
+        }
+    }
+
+    return true;
+}
+
+static boolean ReadAllTracksMem(midi_file_t *file, MEMFILE *stream)
+{
+    unsigned int i;
+
+    file->tracks = malloc(sizeof(midi_track_t) * file->num_tracks);
+
+    if (file->tracks == NULL)
+    {
+        return false;
+    }
+
+    memset(file->tracks, 0, sizeof(midi_track_t) * file->num_tracks);
+
+    for (i=0; i<file->num_tracks; ++i)
+    {
+        if (!ReadTrackMem(&file->tracks[i], stream))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static boolean ReadFileHeaderMem(midi_file_t *file, MEMFILE *stream)
+{
+    size_t records_read;
+    unsigned int format_type;
+
+    records_read = mem_fread(&file->header, sizeof(midi_header_t), 1, stream);
+
+    if (records_read < 1)
+    {
+        return false;
+    }
+
+    if (!CheckChunkHeader(&file->header.chunk_header, HEADER_CHUNK_ID)
+     || SDL_SwapBE32(file->header.chunk_header.chunk_size) != 6)
+    {
+        fprintf(stderr, "ReadFileHeaderMem: Invalid MIDI chunk header! "
+                        "chunk_size=%lu\n",
+                        SDL_SwapBE32(file->header.chunk_header.chunk_size));
+        return false;
+    }
+
+    format_type = SDL_SwapBE16(file->header.format_type);
+    file->num_tracks = SDL_SwapBE16(file->header.num_tracks);
+
+    if ((format_type != 0 && format_type != 1)
+     || file->num_tracks < 1)
+    {
+        fprintf(stderr, "ReadFileHeaderMem: Only type 0/1 "
+                                         "MIDI files supported!\n");
+        return false;
+    }
+
+    return true;
+}
+
+midi_file_t *MIDI_LoadMemory(void *data, size_t len)
+{
+    midi_file_t *file;
+    MEMFILE *stream;
+
+    file = malloc(sizeof(midi_file_t));
+
+    if (file == NULL)
+    {
+        return NULL;
+    }
+
+    file->tracks = NULL;
+    file->num_tracks = 0;
+    file->buffer = NULL;
+    file->buffer_size = 0;
+
+    stream = mem_fopen_read(data, len);
+
+    if (stream == NULL)
+    {
+        fprintf(stderr, "MIDI_LoadMemory: Failed to open memory stream\n");
+        MIDI_FreeFile(file);
+        return NULL;
+    }
+
+    if (!ReadFileHeaderMem(file, stream))
+    {
+        mem_fclose(stream);
+        MIDI_FreeFile(file);
+        return NULL;
+    }
+
+    if (!ReadAllTracksMem(file, stream))
+    {
+        mem_fclose(stream);
+        MIDI_FreeFile(file);
+        return NULL;
+    }
+
+    mem_fclose(stream);
 
     return file;
 }

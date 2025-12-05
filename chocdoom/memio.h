@@ -33,6 +33,7 @@ void mem_get_buf(MEMFILE *stream, void **buf, size_t *buflen);
 void mem_fclose(MEMFILE *stream);
 long mem_ftell(MEMFILE *stream);
 int mem_fseek(MEMFILE *stream, signed long offset, mem_rel_t whence);
+int mem_fgetc(MEMFILE *stream);
 
 #endif /* #ifndef MEMIO_H */
 	  

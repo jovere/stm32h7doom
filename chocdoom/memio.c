@@ -182,16 +182,28 @@ int mem_fseek(MEMFILE *stream, signed long position, mem_rel_t whence)
 			return -1;
 	}
 
-	if (newpos < stream->buflen)
+	if (newpos <= stream->buflen)
 	{
 		stream->position = newpos;
 		return 0;
 	}
 	else
 	{
-		printf("Error seeking to %i\n", newpos);
 		return -1;
 	}
 }
 
+int mem_fgetc(MEMFILE *stream)
+{
+	if (stream->mode != MODE_READ)
+	{
+		return -1;
+	}
 
+	if (stream->position >= stream->buflen)
+	{
+		return -1;  // EOF
+	}
+
+	return stream->buf[stream->position++];
+}
