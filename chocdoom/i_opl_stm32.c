@@ -38,6 +38,9 @@ static int OPL_STM32_Init(unsigned int port_base)
     Chip__Chip(&opl_chip);
     Chip__Setup(&opl_chip, opl_sample_rate);
 
+    /* Start the OPL timer system for MIDI callback processing */
+    OPL_Timer_StartThread();
+
     opl_initialized = 1;
     opl3_mode = 0;  /* Start in OPL2 mode */
 
@@ -51,6 +54,7 @@ static int OPL_STM32_Init(unsigned int port_base)
  */
 static void OPL_STM32_Shutdown(void)
 {
+    OPL_Timer_StopThread();
     opl_initialized = 0;
 }
 
