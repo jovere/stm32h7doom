@@ -932,9 +932,9 @@ void ST_Ticker (void)
     st_oldhealth = plyr->health;
 
     // Update LED matrix with weapon availability
-    uint16_t led_weapons = 0;
+    uint16_t led_weapons = LED_FIST;
 
-    // Slot 1: Chainsaw (no ammo needed)
+    // Slot 8: Chainsaw (no ammo needed)
     if (plyr->weaponowned[wp_chainsaw])
     {
         led_weapons |= LED_CHAINSAW;
