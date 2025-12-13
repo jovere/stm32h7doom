@@ -207,30 +207,44 @@ static void I_STM32_PrecacheSounds(sfxinfo_t *sounds, int num_sounds)
  */
 void Audio_MixCallback(int16_t* buffer, int samples)
 {
-    int i, j;
-    int ch;
-    uint64_t elapsed_us;
+    int j;
 
     /* Clear buffer */
     memset(buffer, 0, samples * 2 * sizeof(int16_t));
 
-    /* Calculate elapsed time for OPL timer (microseconds) */
-    /* samples at 44.1kHz: elapsed_us = (samples * 1000000) / 44100 */
-    elapsed_us = (samples * 1000000ULL) / 44100;
+    /*
+     * Need to generate the samples in small chunks to make sure the on/off timing
+     * works properly.
+     */
+    #define OPL_CHUNK_SIZE 64  /* ~1.5ms at 44100 Hz */
 
-    /* Advance OPL timer and process any pending MIDI events */
-    OPL_Timer_AdvanceTime(elapsed_us);
+    int16_t* buf_ptr = buffer;
+    int remaining = samples;
 
-    /* Generate and mix OPL music */
-    OPL_STM32_GenerateSamples(buffer, samples);
+    while (remaining > 0)
+    {
+        int chunk_size = (remaining > OPL_CHUNK_SIZE) ? OPL_CHUNK_SIZE : remaining;
+
+        /* Calculate elapsed time for this chunk (microseconds) */
+        uint64_t elapsed_us = (chunk_size * 1000000ULL) / 44100;
+
+        /* Advance OPL timer and process any pending MIDI events */
+        OPL_Timer_AdvanceTime(elapsed_us);
+
+        /* Generate OPL samples for this chunk */
+        OPL_STM32_GenerateSamples(buf_ptr, chunk_size);
+
+        buf_ptr += chunk_size * 2;  /* Stereo: 2 samples per frame */
+        remaining -= chunk_size;
+    }
 
     /* Mix all active sound effect channels */
-    for (ch = 0; ch < NUM_CHANNELS; ch++)
+    for (int ch = 0; ch < NUM_CHANNELS; ch++)
     {
         if (!channels[ch].playing)
             continue;
 
-        for (i = 0; i < samples; i++)
+        for (int i = 0; i < samples; i++)
         {
             int sample_pos = channels[ch].position >> 16;  /* Get integer part */
 
