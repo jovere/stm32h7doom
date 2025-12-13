@@ -40,13 +40,14 @@ extern const uint8_t button_key_map[16];
 
 // LED Configuration
 
-#define LED_CHAINSAW    0x0001
+#define LED_FIST        0x0001
 #define LED_PISTOL      0x0002
 #define LED_SHOTGUN     0x0004
 #define LED_CHAINGUN    0x0008
 #define LED_ROCKET      0x0010
 #define LED_PLASMA      0x0020
 #define LED_BFG         0x0100
+#define LED_CHAINSAW    0x0200
 
 void ledMatrixUpdate();
 void ledStatusBar (uint16_t weapons, uint8_t health, uint8_t armor);
