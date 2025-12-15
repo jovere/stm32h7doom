@@ -107,6 +107,23 @@ set(DOOM_SOURCES
 
     # STM32 Sound Backend
     i_sound_stm32.c
+
+    # Dehacked Support
+    deh_io.c
+    deh_main.c
+    deh_mapping.c
+    deh_str.c
+    deh_text.c
+    deh_ammo.c
+    deh_bexstr.c
+    deh_cheat.c
+    deh_doom.c
+    deh_frame.c
+    deh_misc.c
+    deh_ptr.c
+    deh_sound.c
+    deh_thing.c
+    deh_weapon.c
 )
 
 # Create Doom game engine static library

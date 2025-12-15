@@ -1445,6 +1445,13 @@ void D_DoomMain (void)
     //  2. Command line dehacked patches specified with -deh.
     //  3. PWAD dehacked patches in DEHACKED lumps.
     DEH_ParseCommandLine();
+
+    // Load embedded DEHACKED lump from IWAD if present (for Chex Quest, etc.)
+    if (W_CheckNumForName("DEHACKED") >= 0)
+    {
+        DEH_LoadLumpByName("DEHACKED", false, true);
+    }
+
 #endif
 
     // Load PWAD files.
