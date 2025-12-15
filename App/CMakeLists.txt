@@ -6,14 +6,23 @@
 set(QSPI_FS_BIN "${CMAKE_CURRENT_BINARY_DIR}/qspi_fs.bin")
 set(QSPI_FS_OBJ "${CMAKE_CURRENT_BINARY_DIR}/qspi_fs.o")
 
-if(QSPI_WAD_FILE AND EXISTS "${QSPI_WAD_FILE}")
+set(EXISTING_FILES)
+foreach(file ${QSPI_FS_FILES})
+    if(EXISTS "${file}")
+        message("File ${file} found")
+        list(APPEND EXISTING_FILES "${file}")
+    endif()
+endforeach()
+
+if(EXISTING_FILES)
+    message("The following files will be added to the filesystem: ${EXISTING_FILES}")
     # Generate filesystem image
     add_custom_command(
         OUTPUT "${QSPI_FS_BIN}"
         COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/tools/create_fatfs.py"
-                "${QSPI_FS_BIN}" "${QSPI_WAD_FILE}"
-        DEPENDS "${QSPI_WAD_FILE}" "${CMAKE_SOURCE_DIR}/tools/create_fatfs.py"
-        COMMENT "Generating QSPI FAT filesystem with ${QSPI_WAD_FILE}"
+                "${QSPI_FS_BIN}" ${EXISTING_FILES}
+        DEPENDS ${EXISTING_FILES} "${CMAKE_SOURCE_DIR}/tools/create_fatfs.py"
+        COMMENT "Generating QSPI FAT filesystem with ${EXISTING_FILES}"
         VERBATIM
     )
 
