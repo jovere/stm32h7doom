@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "d_iwad.h"
 #include "gfx.h"
 #include "images.h"
 #include "jpeg.h"
@@ -187,13 +188,61 @@ static uint8_t ConfigureNetworkMode(void)
 
     } else {
         // No button held - SINGLE PLAYER
-        DPRINT("=================================\n");
-        DPRINT("  DOOM - SINGLE PLAYER MODE\n");
-        DPRINT("=================================\n");
+        DPRINT("        =================================\n");
+        DPRINT("          DOOM - SINGLE PLAYER MODE\n");
+        DPRINT("        =================================\n");
     }
 
     DebugConsole_Draw();
     return last_octet;
+}
+
+void ChooseWad()
+{
+  iwad_t const * const * const wads = D_FindAllIWADs(IWAD_MASK_DOOM);
+
+  DPRINT("\n");
+  DPRINT("        Choose a version to play:\n");
+  int i = 0;
+  for (; wads[i] != NULL && i < 8; ++i)
+  {
+    DPRINT("        %i. %s\n", i+1, wads[i]->description);
+  }
+
+  // Just return if there is only one wad
+  if (i <= 1)
+  {
+    return;
+  }
+
+  DebugConsole_Draw();
+
+  // Continue until we get a valid choice
+  for (;;)
+  {
+    int selection = 99;
+    switch (getButtonMatrix())
+    {
+      case BUTTON_1: selection = 0; break;
+      case BUTTON_2: selection = 1; break;
+      case BUTTON_3: selection = 2; break;
+      case BUTTON_4: selection = 3; break;
+      case BUTTON_5: selection = 4; break;
+      case BUTTON_6: selection = 5; break;
+      case BUTTON_7: selection = 6; break;
+      case BUTTON_8: selection = 7; break;
+      default: break;
+    }
+
+    if (selection < i)
+    {
+      myargv[myargc] = "-iwad";
+      myargc++;
+      myargv[myargc] = wads[selection]->name;
+      myargc++;
+      break;
+    }
+  }
 }
 
 /*
@@ -305,7 +354,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
     // Configure network mode based on startup button
     MX_LWIP_Init(ConfigureNetworkMode());
-
+    ChooseWad();
     D_DoomMain();
   while (1)
   {
