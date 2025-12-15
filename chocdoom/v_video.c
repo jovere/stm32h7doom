@@ -137,14 +137,16 @@ void V_SetPatchClipCallback(vpatchclipfunc_t func)
 //
 
 void V_DrawPatch(int x, int y, patch_t *patch)
-{ 
+{
     int count;
     int col;
     column_t *column;
     byte *desttop;
     byte *dest;
     byte *source;
-    int w;
+    int w, h;
+    int startcol, startrow;
+    int screeny;
 
     y -= SHORT(patch->topoffset);
     x -= SHORT(patch->leftoffset);
@@ -156,33 +158,97 @@ void V_DrawPatch(int x, int y, patch_t *patch)
             return;
     }
 
-#ifdef RANGECHECK
-    if (x < 0
-     || x + SHORT(patch->width) > SCREENWIDTH
-     || y < 0
-     || y + SHORT(patch->height) > SCREENHEIGHT)
-    {
-        I_Error("Bad V_DrawPatch x=%i y=%i patch.width=%i patch.height=%i topoffset=%i leftoffset=%i", x, y, patch->width, patch->height, patch->topoffset, patch->leftoffset);
-    }
-#endif
-
-    V_MarkRect(x, y, SHORT(patch->width), SHORT(patch->height));
-
-    col = 0;
-    desttop = dest_screen + y * SCREENWIDTH + x;
-
     w = SHORT(patch->width);
+    h = SHORT(patch->height);
 
-    for ( ; col<w ; x++, col++, desttop++)
+    // Calculate clipping bounds (center-crop oversized patches)
+    startcol = 0;
+    startrow = 0;
+
+    // Horizontal clipping
+    if (x < 0)
+    {
+        startcol = -x;
+        x = 0;
+    }
+    else if (x + w > SCREENWIDTH)
+    {
+        // Patch extends past right edge - center it
+        int excess = (x + w) - SCREENWIDTH;
+        if (x == 0)
+        {
+            // Full-width patch starting at 0: center-crop
+            startcol = excess / 2;
+        }
+        w = SCREENWIDTH - x + startcol;
+    }
+
+    // Vertical clipping
+    if (y < 0)
+    {
+        startrow = -y;
+        y = 0;
+    }
+    else if (y + h > SCREENHEIGHT)
+    {
+        int excess = (y + h) - SCREENHEIGHT;
+        if (y == 0)
+        {
+            startrow = excess / 2;
+        }
+        h = SCREENHEIGHT - y + startrow;
+    }
+
+    // Entirely off-screen?
+    if (startcol >= SHORT(patch->width) || startrow >= SHORT(patch->height))
+        return;
+    if (w <= startcol || h <= startrow)
+        return;
+
+    V_MarkRect(x, y, w - startcol, h - startrow);
+
+    col = startcol;
+    desttop = dest_screen + y * SCREENWIDTH + x;
+    screeny = y;
+
+    for ( ; col < w ; col++, desttop++)
     {
         column = (column_t *)((byte *)patch + LONG(patch->columnofs[col]));
 
         // step through the posts in a column
         while (column->topdelta != 0xff)
         {
-            source = (byte *)column + 3;
-            dest = desttop + column->topdelta*SCREENWIDTH;
-            count = column->length;
+            int topdelta = column->topdelta;
+            int length = column->length;
+            int srcoff = 0;
+
+            // Clip top of post
+            if (topdelta < startrow)
+            {
+                srcoff = startrow - topdelta;
+                if (srcoff >= length)
+                {
+                    column = (column_t *)((byte *)column + length + 4);
+                    continue;
+                }
+                length -= srcoff;
+                topdelta = startrow;
+            }
+
+            // Clip bottom of post
+            if (topdelta - startrow + length > SCREENHEIGHT - screeny)
+            {
+                length = SCREENHEIGHT - screeny - (topdelta - startrow);
+                if (length <= 0)
+                {
+                    column = (column_t *)((byte *)column + column->length + 4);
+                    continue;
+                }
+            }
+
+            source = (byte *)column + 3 + srcoff;
+            dest = desttop + (topdelta - startrow) * SCREENWIDTH;
+            count = length;
 
             while (count--)
             {
@@ -203,15 +269,18 @@ void V_DrawPatch(int x, int y, patch_t *patch)
 void V_DrawPatchFlipped(int x, int y, patch_t *patch)
 {
     int count;
-    int col; 
-    column_t *column; 
+    int col;
+    column_t *column;
     byte *desttop;
     byte *dest;
-    byte *source; 
-    int w; 
- 
-    y -= SHORT(patch->topoffset); 
-    x -= SHORT(patch->leftoffset); 
+    byte *source;
+    int w, h;
+    int startcol, startrow;
+    int screeny;
+    int patchwidth;
+
+    y -= SHORT(patch->topoffset);
+    x -= SHORT(patch->leftoffset);
 
     // haleyjd 08/28/10: Strife needs silent error checking here.
     if(patchclip_callback)
@@ -220,33 +289,97 @@ void V_DrawPatchFlipped(int x, int y, patch_t *patch)
             return;
     }
 
-#ifdef RANGECHECK 
-    if (x < 0
-     || x + SHORT(patch->width) > SCREENWIDTH
-     || y < 0
-     || y + SHORT(patch->height) > SCREENHEIGHT)
+    patchwidth = SHORT(patch->width);
+    w = patchwidth;
+    h = SHORT(patch->height);
+
+    // Calculate clipping bounds (center-crop oversized patches)
+    startcol = 0;
+    startrow = 0;
+
+    // Horizontal clipping
+    if (x < 0)
     {
-        I_Error("Bad V_DrawPatchFlipped");
+        startcol = -x;
+        x = 0;
     }
-#endif
-
-    V_MarkRect (x, y, SHORT(patch->width), SHORT(patch->height));
-
-    col = 0;
-    desttop = dest_screen + y * SCREENWIDTH + x;
-
-    w = SHORT(patch->width);
-
-    for ( ; col<w ; x++, col++, desttop++)
+    else if (x + w > SCREENWIDTH)
     {
-        column = (column_t *)((byte *)patch + LONG(patch->columnofs[w-1-col]));
+        int excess = (x + w) - SCREENWIDTH;
+        if (x == 0)
+        {
+            startcol = excess / 2;
+        }
+        w = SCREENWIDTH - x + startcol;
+    }
+
+    // Vertical clipping
+    if (y < 0)
+    {
+        startrow = -y;
+        y = 0;
+    }
+    else if (y + h > SCREENHEIGHT)
+    {
+        int excess = (y + h) - SCREENHEIGHT;
+        if (y == 0)
+        {
+            startrow = excess / 2;
+        }
+        h = SCREENHEIGHT - y + startrow;
+    }
+
+    // Entirely off-screen?
+    if (startcol >= patchwidth || startrow >= SHORT(patch->height))
+        return;
+    if (w <= startcol || h <= startrow)
+        return;
+
+    V_MarkRect(x, y, w - startcol, h - startrow);
+
+    col = startcol;
+    desttop = dest_screen + y * SCREENWIDTH + x;
+    screeny = y;
+
+    for ( ; col < w ; col++, desttop++)
+    {
+        // Flipped: read columns from the opposite end
+        column = (column_t *)((byte *)patch + LONG(patch->columnofs[patchwidth - 1 - col]));
 
         // step through the posts in a column
-        while (column->topdelta != 0xff )
+        while (column->topdelta != 0xff)
         {
-            source = (byte *)column + 3;
-            dest = desttop + column->topdelta*SCREENWIDTH;
-            count = column->length;
+            int topdelta = column->topdelta;
+            int length = column->length;
+            int srcoff = 0;
+
+            // Clip top of post
+            if (topdelta < startrow)
+            {
+                srcoff = startrow - topdelta;
+                if (srcoff >= length)
+                {
+                    column = (column_t *)((byte *)column + length + 4);
+                    continue;
+                }
+                length -= srcoff;
+                topdelta = startrow;
+            }
+
+            // Clip bottom of post
+            if (topdelta - startrow + length > SCREENHEIGHT - screeny)
+            {
+                length = SCREENHEIGHT - screeny - (topdelta - startrow);
+                if (length <= 0)
+                {
+                    column = (column_t *)((byte *)column + column->length + 4);
+                    continue;
+                }
+            }
+
+            source = (byte *)column + 3 + srcoff;
+            dest = desttop + (topdelta - startrow) * SCREENWIDTH;
+            count = length;
 
             while (count--)
             {
