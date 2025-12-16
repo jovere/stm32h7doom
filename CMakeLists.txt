@@ -46,10 +46,12 @@ endif()
 # QSPI Filesystem Generation configuration (used by App)
 # The actual generation happens in App/CMakeLists.txt where it's consumed
 set(QSPI_FS_FILES
-    "${CMAKE_CURRENT_SOURCE_DIR}/doom1.wad"
+    "${CMAKE_CURRENT_SOURCE_DIR}/chex.wad"
+    "${CMAKE_CURRENT_SOURCE_DIR}/chex2.wad"
     "${CMAKE_CURRENT_SOURCE_DIR}/doom.wad"
+    #"${CMAKE_CURRENT_SOURCE_DIR}/doom1.wad"
     "${CMAKE_CURRENT_SOURCE_DIR}/doom2.wad"
-    "${CMAKE_CURRENT_SOURCE_DIR}/iddm1.wad"
+    #"${CMAKE_CURRENT_SOURCE_DIR}/iddm1.wad"
 )
 message(STATUS "QSPI files: ${QSPI_FS_FILES}")
 
